@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 import os
 import openai
+import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -131,18 +132,7 @@ def generate_video():
 
 
 def generate_script_with_ai(prompt: str, options: dict) -> str:
-    """Generate a short-form video script using OpenAI GPT."""
-    if not openai.api_key:
-        # Fallback demo script when no API key is set
-        return (
-            f"[HOOK] Did you know that {prompt[:60]}? "
-            "Here's what you need to know in under 60 seconds. "
-            "[POINT 1] First, start with the fundamentals. "
-            "[POINT 2] Next, apply what you've learned consistently. "
-            "[POINT 3] Finally, track your progress and iterate. "
-            "[CTA] Follow for more content like this every day!"
-        )
-
+    """Generate a short-form video script using Gemini or OpenAI."""
     style = options.get("style", "dynamic")
     duration = options.get("duration", "60 seconds")
 
@@ -153,19 +143,43 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
         "Keep sentences short. Write ONLY the script, no scene directions."
     )
 
-    try:
-        resp = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Write a script about: {prompt}"},
-            ],
-            max_tokens=400,
-            temperature=0.8,
-        )
-        return resp.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Script generation failed: {str(e)}. Please check your OpenAI API key."
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        try:
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                system_instruction=system_prompt
+            )
+            resp = model.generate_content(f"Write a script about: {prompt}")
+            return resp.text.strip()
+        except Exception as e:
+            return f"Gemini Script generation failed: {str(e)}. Please check your Gemini API key."
+
+    if openai.api_key:
+        try:
+            resp = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Write a script about: {prompt}"},
+                ],
+                max_tokens=400,
+                temperature=0.8,
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as e:
+            return f"OpenAI Script generation failed: {str(e)}. Please check your OpenAI API key."
+
+    # Fallback demo script when no API key is set
+    return (
+        f"[HOOK] Did you know that {prompt[:60]}? "
+        "Here's what you need to know in under 60 seconds. "
+        "[POINT 1] First, start with the fundamentals. "
+        "[POINT 2] Next, apply what you've learned consistently. "
+        "[POINT 3] Finally, track your progress and iterate. "
+        "[CTA] Follow for more content like this every day!"
+    )
 
 
 def extract_tags(prompt: str) -> list:
