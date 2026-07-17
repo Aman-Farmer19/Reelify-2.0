@@ -11,6 +11,7 @@
 
 ## Features
 
+- **Unified Server** — Frontend and Backend run from a single Flask server on a single port (5000)
 - **AI Script Generation** — Describe your idea; GPT-4o-mini writes an optimised short-form script
 - **Video Generation Flow** — Step-by-step progress UI (script → visuals → voice → render)
 - **Authentication** — JWT-based login and registration
@@ -37,31 +38,35 @@
 
 ```
 reelify/
+├── start.bat                 # One-click launcher (builds UI + runs Flask server)
+├── server.js                 # Dev runner utility
 ├── frontend/
+│   ├── dist/                 # Built frontend production files (served by Flask)
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Navbar.jsx        # Top navigation bar
-│   │   │   ├── Sidebar.jsx       # Dashboard sidebar
-│   │   │   ├── AuthModal.jsx     # Login / Signup modal
-│   │   │   └── VideoCard.jsx     # Video card component
+│   │   │   ├── Navbar.jsx    # Top navigation bar
+│   │   │   ├── Sidebar.jsx   # Dashboard sidebar
+│   │   │   ├── AuthModal.jsx # Login / Signup modal
+│   │   │   └── VideoCard.jsx # Video card component
 │   │   ├── pages/
-│   │   │   ├── LandingPage.jsx   # Home / Hero page
-│   │   │   ├── Dashboard.jsx     # User video dashboard
-│   │   │   └── Generator.jsx     # AI video generation page
+│   │   │   ├── LandingPage.jsx # Home / Hero page
+│   │   │   ├── Dashboard.jsx # User video dashboard
+│   │   │   └── Generator.jsx # AI video generation page
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx   # Auth state management
-│   │   ├── App.jsx               # Routes and layout
-│   │   ├── main.jsx              # React entry point
-│   │   └── index.css             # Global Tailwind styles
+│   │   │   └── AuthContext.jsx # Auth state management
+│   │   ├── App.jsx           # Routes and layout
+│   │   ├── main.jsx          # React entry point
+│   │   └── index.css         # Global Tailwind styles
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.js
 │   └── tailwind.config.js
 │
 ├── backend/
-│   ├── app.py                    # Flask API (auth + generation)
+│   ├── app.py                # Flask Server (serves React + API routes)
 │   ├── requirements.txt
-│   └── .env.example
+│   ├── .env.example
+│   └── .env
 │
 ├── .gitignore
 └── README.md
@@ -82,46 +87,45 @@ reelify/
 
 ```bash
 git clone https://github.com/Aman-Farmer19/Reelify-2.0.git
-cd Reelify-2.0
+cd Reelify-2.0/reelify
 ```
 
-### 2. Setup the Backend
+---
 
-```bash
-cd backend
+### 2. Run the App
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env and add your OpenAI API key
-
-# Run the Flask server
-python app.py
-# Backend runs at http://localhost:5000
+#### Option A: One-click launcher (Windows)
+Double-click `start.bat` or run it from terminal:
+```powershell
+.\start.bat
 ```
+This automatically builds the React frontend and starts the Flask server.
 
-### 3. Setup the Frontend
+#### Option B: Manual Startup
 
+**Step 1: Build the Frontend**
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-# Frontend runs at http://localhost:5173
+npm run build
+cd ..
 ```
 
-### 4. Open in browser
+**Step 2: Start the Server**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env            # Add your OpenAI API key to .env if you have one
+python app.py
+```
 
-Go to **http://localhost:5173**
+---
+
+### 3. Open in Browser
+
+Go to **[http://localhost:5000](http://localhost:5000)** (both API and React app serve from here).
 
 ---
 
@@ -147,21 +151,15 @@ OPENAI_API_KEY=sk-your-key-here   # Optional — demo mode works without it
 
 ---
 
-## Deployment
+## Deployment (Single Service)
 
-### Frontend (Vercel)
-```bash
-cd frontend
-npm run build
-# Deploy dist/ folder to Vercel
-```
+Since the frontend is served statically by the Flask server, you can deploy the entire application as a single Flask web service:
 
-### Backend (Render / Railway)
-1. Push repo to GitHub
-2. Connect on [render.com](https://render.com)
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `gunicorn app:app`
-5. Add environment variables in Render dashboard
+1. Push your repository to GitHub.
+2. Link it to **Render**, **Railway**, or **Heroku**.
+3. Build Command: `cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt`
+4. Start Command: `cd backend && gunicorn app:app`
+5. Configure your environment variables in the dashboard.
 
 ---
 
