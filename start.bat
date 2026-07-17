@@ -28,7 +28,6 @@ echo.
 REM Step 2: Start Flask server
 echo [2/2] Starting Reelify server...
 cd /d "%PROJECT_ROOT%backend"
-call ".\venv\Scripts\activate.bat"
-python app.py
+".\venv\Scripts\python.exe" app.py
 
 pause
