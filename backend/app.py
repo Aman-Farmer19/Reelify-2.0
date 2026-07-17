@@ -1,5 +1,4 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify, send_from_directory
 from flask_jwt_extended import (
     JWTManager, create_access_token,
     jwt_required, get_jwt_identity
@@ -12,8 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "http://localhost:3000"])
+# ─── Paths ────────────────────────────────────────────────────────────────────
+# The built React app lives at ../frontend/dist relative to this file
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
+DIST_DIR = os.path.normpath(DIST_DIR)
+
+app = Flask(__name__, static_folder=None)
 
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET", "reelify-secret-dev-key")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
@@ -99,7 +102,7 @@ def generate_video():
     script = generate_script_with_ai(prompt, options)
 
     # Build result
-    title = prompt[:50] + "…" if len(prompt) > 50 else prompt
+    title = prompt[:50] + "..." if len(prompt) > 50 else prompt
     result = {
         "title": title,
         "script": script,
@@ -146,7 +149,7 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
     system_prompt = (
         "You are a world-class short-form video scriptwriter. "
         f"Write a {duration} video script in a {style} style. "
-        "Structure: hook (first 3s) → 3 key points → strong CTA. "
+        "Structure: hook (first 3s) -> 3 key points -> strong CTA. "
         "Keep sentences short. Write ONLY the script, no scene directions."
     )
 
@@ -182,17 +185,39 @@ def health():
     return jsonify({"status": "ok", "service": "Reelify API"}), 200
 
 
+# ─── Serve React Frontend ────────────────────────────────────────────────────
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_frontend(path):
+    """Serve the React app. For any non-API route, return index.html
+    so that React Router can handle client-side routing."""
+    # If the file exists in the dist folder, serve it (JS, CSS, images, etc.)
+    file_path = os.path.join(DIST_DIR, path)
+    if path and os.path.isfile(file_path):
+        return send_from_directory(DIST_DIR, path)
+    # Otherwise, serve index.html for SPA client-side routing
+    return send_from_directory(DIST_DIR, "index.html")
+
+
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run the Reelify Flask backend")
+    parser = argparse.ArgumentParser(description="Run the Reelify server")
     parser.add_argument(
         "--port",
         type=int,
         default=int(os.getenv("PORT", 5000)),
-        help="Port to run the backend on (default: 5000)",
+        help="Port to run the server on (default: 5000)",
     )
     args = parser.parse_args()
 
-    print(f"🚀 Reelify backend running on http://localhost:{args.port}")
+    # Check if frontend is built
+    if not os.path.isdir(DIST_DIR):
+        print(f"[WARNING] Frontend build not found at: {DIST_DIR}")
+        print("  Run 'npm run build' in the frontend/ directory first.")
+        print("  API routes will still work, but the UI won't load.")
+    else:
+        print(f">> Serving React frontend from: {DIST_DIR}")
+
+    print(f">> Reelify running on http://localhost:{args.port}")
     app.run(debug=True, port=args.port)
