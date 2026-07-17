@@ -1,4 +1,4 @@
-# Reelify – AI Powered Short Video Generator
+# Reelify-2.0 – AI Powered Short Video Generator
 
 > Turn your ideas into short-form videos in seconds using Generative AI.
 
