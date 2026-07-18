@@ -148,7 +148,7 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
         try:
             genai.configure(api_key=gemini_key)
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name="gemini-3.5-flash",
                 system_instruction=system_prompt
             )
             resp = model.generate_content(f"Write a script about: {prompt}")
