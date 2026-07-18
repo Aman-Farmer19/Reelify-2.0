@@ -111,7 +111,7 @@ def generate_video():
         "format": options.get("format", "9:16"),
         "style": options.get("style", "Cinematic"),
         "status": "completed",
-        "download_url": "#",   # Replace with real video URL after video gen API call
+        "download_url": "/demo.mp4",   # Serve the local demo video
         "tags": extract_tags(prompt),
         "views": "0",
     }

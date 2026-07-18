@@ -195,15 +195,14 @@ export default function Generator() {
                 </a>
               </div>
 
-              {/* Fake video thumbnail */}
-              <div className="h-52 rounded-xl flex items-center justify-center text-5xl mb-4 relative overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #1a0a3a 0%, #0a1a4a 100%)' }}>
-                🎬
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center text-white text-2xl cursor-pointer hover:bg-white/20 transition-all">
-                    ▶
-                  </div>
-                </div>
+              {/* Real Video Player */}
+              <div className="rounded-2xl mb-4 overflow-hidden bg-surface-1 border border-border aspect-video flex items-center justify-center">
+                <video
+                  src={result.download_url || "/demo.mp4"}
+                  controls
+                  className="w-full h-full object-contain"
+                  style={{ maxHeight: '320px' }}
+                />
               </div>
 
               <p className="text-sm font-semibold text-white mb-2">{result.title}</p>
