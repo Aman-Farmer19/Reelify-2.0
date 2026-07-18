@@ -156,34 +156,48 @@ def parse_ai_json(text: str, default_query: str) -> tuple:
 
 
 def search_pexels_video(query: str) -> str:
-    """Search Pexels API for a matching stock video."""
+    """Search Pexels API for a matching stock video, with fallback to keyword-based stock links."""
+    query_clean = query.strip().lower().replace('"', '').replace("'", "")
+
+    # ─── Free Stock Video URLs Fallback (Mixkit) ─────────────────────────────
+    fallback_map = {
+        ("puppy", "dog", "animal", "pet", "cat"): "https://assets.mixkit.co/videos/preview/mixkit-dog-running-on-the-grass-in-slow-motion-42657-large.mp4",
+        ("code", "dev", "tech", "laptop", "computer", "typing"): "https://assets.mixkit.co/videos/preview/mixkit-hand-typing-on-a-laptop-keyboard-41718-large.mp4",
+        ("nature", "beach", "forest", "tree", "mountain", "ocean", "sea", "travel"): "https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-thick-green-forest-42211-large.mp4",
+        ("food", "cook", "kitchen", "chef", "bake", "eating", "recipe"): "https://assets.mixkit.co/videos/preview/mixkit-chopping-vegetables-on-a-cutting-board-41926-large.mp4",
+        ("gym", "workout", "fitness", "pushup", "exercise", "run", "sport"): "https://assets.mixkit.co/videos/preview/mixkit-man-doing-push-ups-in-the-gym-42171-large.mp4"
+    }
+
+    # Check if query contains any of the target keywords
+    matched_url = None
+    for keywords, video_url in fallback_map.items():
+        if any(kw in query_clean for kw in keywords):
+            matched_url = video_url
+            break
+
     pexels_key = os.getenv("PEXELS_API_KEY")
-    if not pexels_key:
-        print("[Pexels] PEXELS_API_KEY not set. Using demo fallback.")
-        return "/demo.mp4"
+    if pexels_key:
+        headers = {"Authorization": pexels_key}
+        url = f"https://api.pexels.com/videos/search?query={query_clean}&per_page=3&size=medium"
+        try:
+            res = requests.get(url, headers=headers, timeout=8)
+            if res.status_code == 200:
+                data = res.json()
+                videos = data.get("videos", [])
+                if videos:
+                    # Get the video files list
+                    video_files = videos[0].get("video_files", [])
+                    for vf in video_files:
+                        # Prefer HD/SD quality mp4 files
+                        if vf.get("quality") in ["hd", "sd"] and vf.get("file_type") == "video/mp4":
+                            return vf.get("link")
+                    if video_files:
+                        return video_files[0].get("link")
+        except Exception as e:
+            print(f"[Pexels] Error searching '{query_clean}': {e}")
 
-    query_clean = query.strip().replace('"', '').replace("'", "")
-    headers = {"Authorization": pexels_key}
-    url = f"https://api.pexels.com/videos/search?query={query_clean}&per_page=3&size=medium"
-
-    try:
-        res = requests.get(url, headers=headers, timeout=8)
-        if res.status_code == 200:
-            data = res.json()
-            videos = data.get("videos", [])
-            if videos:
-                # Get the video files list
-                video_files = videos[0].get("video_files", [])
-                for vf in video_files:
-                    # Prefer HD/SD quality mp4 files
-                    if vf.get("quality") in ["hd", "sd"] and vf.get("file_type") == "video/mp4":
-                        return vf.get("link")
-                if video_files:
-                    return video_files[0].get("link")
-    except Exception as e:
-        print(f"[Pexels] Error searching '{query_clean}': {e}")
-
-    return "/demo.mp4"
+    # Fallback to matched keyword URL, otherwise use local demo video
+    return matched_url if matched_url else "/demo.mp4"
 
 
 def generate_script_with_ai(prompt: str, options: dict) -> tuple:
