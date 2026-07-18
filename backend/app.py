@@ -7,7 +7,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import timedelta
 import os
 import openai
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ImportError:
+    genai = None
+import requests
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -88,9 +93,8 @@ def get_videos():
 def generate_video():
     """
     Main AI generation endpoint.
-    Uses OpenAI to generate a script from the user's prompt.
-    In production, this would also call a video generation API
-    (e.g. RunwayML, Luma, Kling) and return a video URL.
+    Uses AI to generate a script and extracts keywords,
+    then searches Pexels for a matching stock video.
     """
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
@@ -99,8 +103,11 @@ def generate_video():
     if not prompt:
         return jsonify({"error": "Prompt is required"}), 400
 
-    # Generate script using OpenAI
-    script = generate_script_with_ai(prompt, options)
+    # Generate script and search query
+    script, search_query = generate_script_with_ai(prompt, options)
+
+    # Fetch matching video from Pexels
+    download_url = search_pexels_video(search_query)
 
     # Build result
     title = prompt[:50] + "..." if len(prompt) > 50 else prompt
@@ -111,7 +118,7 @@ def generate_video():
         "format": options.get("format", "9:16"),
         "style": options.get("style", "Cinematic"),
         "status": "completed",
-        "download_url": "/demo.mp4",   # Serve the local demo video
+        "download_url": download_url,
         "tags": extract_tags(prompt),
         "views": "0",
     }
@@ -131,17 +138,69 @@ def generate_video():
     return jsonify(result), 200
 
 
-def generate_script_with_ai(prompt: str, options: dict) -> str:
-    """Generate a short-form video script using Gemini or OpenAI."""
+def parse_ai_json(text: str, default_query: str) -> tuple:
+    """Safely parse AI JSON response for script and search query."""
+    cleaned = text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    cleaned = cleaned.strip()
+
+    try:
+        data = json.loads(cleaned)
+        return data.get("script", ""), data.get("search_query", default_query)
+    except Exception:
+        # Fallback if AI returned plain text instead of JSON
+        return text, default_query
+
+
+def search_pexels_video(query: str) -> str:
+    """Search Pexels API for a matching stock video."""
+    pexels_key = os.getenv("PEXELS_API_KEY")
+    if not pexels_key:
+        print("[Pexels] PEXELS_API_KEY not set. Using demo fallback.")
+        return "/demo.mp4"
+
+    query_clean = query.strip().replace('"', '').replace("'", "")
+    headers = {"Authorization": pexels_key}
+    url = f"https://api.pexels.com/videos/search?query={query_clean}&per_page=3&size=medium"
+
+    try:
+        res = requests.get(url, headers=headers, timeout=8)
+        if res.status_code == 200:
+            data = res.json()
+            videos = data.get("videos", [])
+            if videos:
+                # Get the video files list
+                video_files = videos[0].get("video_files", [])
+                for vf in video_files:
+                    # Prefer HD/SD quality mp4 files
+                    if vf.get("quality") in ["hd", "sd"] and vf.get("file_type") == "video/mp4":
+                        return vf.get("link")
+                if video_files:
+                    return video_files[0].get("link")
+    except Exception as e:
+        print(f"[Pexels] Error searching '{query_clean}': {e}")
+
+    return "/demo.mp4"
+
+
+def generate_script_with_ai(prompt: str, options: dict) -> tuple:
+    """Generate script and matching search query using Gemini or OpenAI."""
     style = options.get("style", "dynamic")
     duration = options.get("duration", "60 seconds")
 
     system_prompt = (
         "You are a world-class short-form video scriptwriter. "
-        f"Write a {duration} video script in a {style} style. "
-        "Structure: hook (first 3s) -> 3 key points -> strong CTA. "
-        "Keep sentences short. Write ONLY the script, no scene directions."
+        "You MUST return a JSON object with two keys: 'script' and 'search_query'.\n"
+        f"'script': Write a {duration} video script in a {style} style. Structure: hook (first 3s) -> 3 key points -> strong CTA. Keep sentences short. Write ONLY the script, no scene directions.\n"
+        "'search_query': A simple search query (2-3 words, like 'puppy running', 'beach sunset', 'coding laptop') matching the visual theme of the prompt."
     )
+
+    # Use first 2 words of prompt as a basic query fallback
+    words = [w for w in prompt.split() if w.isalnum()]
+    default_query = " ".join(words[:2]) if words else "coding"
 
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
@@ -152,9 +211,9 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
                 system_instruction=system_prompt
             )
             resp = model.generate_content(f"Write a script about: {prompt}")
-            return resp.text.strip()
+            return parse_ai_json(resp.text, default_query)
         except Exception as e:
-            return f"Gemini Script generation failed: {str(e)}. Please check your Gemini API key."
+            print(f"[Gemini] Generation failed: {e}")
 
     if openai.api_key:
         try:
@@ -167,12 +226,12 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
                 max_tokens=400,
                 temperature=0.8,
             )
-            return resp.choices[0].message.content.strip()
+            return parse_ai_json(resp.choices[0].message.content, default_query)
         except Exception as e:
-            return f"OpenAI Script generation failed: {str(e)}. Please check your OpenAI API key."
+            print(f"[OpenAI] Generation failed: {e}")
 
-    # Fallback demo script when no API key is set
-    return (
+    # Offline/Demo Fallback
+    fallback_script = (
         f"[HOOK] Did you know that {prompt[:60]}? "
         "Here's what you need to know in under 60 seconds. "
         "[POINT 1] First, start with the fundamentals. "
@@ -180,6 +239,7 @@ def generate_script_with_ai(prompt: str, options: dict) -> str:
         "[POINT 3] Finally, track your progress and iterate. "
         "[CTA] Follow for more content like this every day!"
     )
+    return fallback_script, default_query
 
 
 def extract_tags(prompt: str) -> list:
