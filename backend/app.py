@@ -109,6 +109,10 @@ def generate_video():
     # Fetch matching video from Pexels
     download_url = search_pexels_video(search_query)
 
+    # Wrap the remote URL in our local streaming proxy to prevent CORS blocks
+    import urllib.parse
+    wrapped_url = f"/api/video_stream?url={urllib.parse.quote(download_url)}" if download_url.startswith("http") else download_url
+
     # Build result
     title = prompt[:50] + "..." if len(prompt) > 50 else prompt
     result = {
@@ -118,7 +122,7 @@ def generate_video():
         "format": options.get("format", "9:16"),
         "style": options.get("style", "Cinematic"),
         "status": "completed",
-        "download_url": download_url,
+        "download_url": wrapped_url,
         "tags": extract_tags(prompt),
         "views": "0",
     }
@@ -271,6 +275,36 @@ def extract_tags(prompt: str) -> list:
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "service": "Reelify API"}), 200
+
+
+# ─── Serve/Stream Remote Videos to Bypass CORS/Hotlinking ───────────────────
+@app.route("/api/video_stream")
+def stream_video():
+    video_url = request.args.get("url")
+    if not video_url or video_url.startswith("/") or "localhost" in video_url:
+        return send_from_directory(DIST_DIR, "demo.mp4")
+
+    try:
+        # Stream the video from the remote URL (Pexels / Mixkit)
+        req = requests.get(video_url, stream=True, timeout=10)
+        
+        # Prepare headers for the response
+        response_headers = {
+            "Content-Type": req.headers.get("Content-Type", "video/mp4"),
+            "Content-Length": req.headers.get("Content-Length"),
+            "Accept-Ranges": "bytes"
+        }
+        # Filter out None values
+        response_headers = {k: v for k, v in response_headers.items() if v is not None}
+        
+        def generate():
+            for chunk in req.iter_content(chunk_size=4096):
+                yield chunk
+                
+        return app.response_class(generate(), headers=response_headers, status=req.status_code)
+    except Exception as e:
+        print(f"[Streaming] Failed to stream from {video_url}: {e}")
+        return send_from_directory(DIST_DIR, "demo.mp4")
 
 
 # ─── Serve React Frontend ────────────────────────────────────────────────────
