@@ -163,13 +163,13 @@ def search_pexels_video(query: str) -> str:
     """Search Pexels API for a matching stock video, with fallback to keyword-based stock links."""
     query_clean = query.strip().lower().replace('"', '').replace("'", "")
 
-    # ─── Free Stock Video URLs Fallback (Mixkit) ─────────────────────────────
+    # ─── Free Stock Video URLs Fallback (Stable CDNs) ────────────────────────
     fallback_map = {
-        ("puppy", "dog", "animal", "pet", "cat"): "https://assets.mixkit.co/videos/preview/mixkit-dog-running-on-the-grass-in-slow-motion-42657-large.mp4",
-        ("code", "dev", "tech", "laptop", "computer", "typing"): "https://assets.mixkit.co/videos/preview/mixkit-hand-typing-on-a-laptop-keyboard-41718-large.mp4",
-        ("nature", "beach", "forest", "tree", "mountain", "ocean", "sea", "travel"): "https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-thick-green-forest-42211-large.mp4",
-        ("food", "cook", "kitchen", "chef", "bake", "eating", "recipe"): "https://assets.mixkit.co/videos/preview/mixkit-chopping-vegetables-on-a-cutting-board-41926-large.mp4",
-        ("gym", "workout", "fitness", "pushup", "exercise", "run", "sport"): "https://assets.mixkit.co/videos/preview/mixkit-man-doing-push-ups-in-the-gym-42171-large.mp4"
+        ("puppy", "dog", "animal", "pet", "cat", "bear"): "https://www.w3schools.com/html/movie.mp4",
+        ("code", "dev", "tech", "laptop", "computer", "typing", "sintel"): "https://media.w3.org/2010/05/sintel/trailer_hd.mp4",
+        ("nature", "beach", "forest", "tree", "mountain", "ocean", "sea", "travel", "oceans"): "https://vjs.zencdn.net/v/oceans.mp4",
+        ("food", "cook", "kitchen", "chef", "bake", "eating", "recipe", "classroom", "school", "student", "office"): "https://github.com/intel-iot-devkit/sample-videos/raw/master/classroom.mp4",
+        ("gym", "workout", "fitness", "pushup", "exercise", "run", "sport", "people", "street", "walking"): "https://github.com/intel-iot-devkit/sample-videos/raw/master/people-detection.mp4"
     }
 
     # Check if query contains any of the target keywords
