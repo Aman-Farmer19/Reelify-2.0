@@ -106,8 +106,8 @@ def generate_video():
     # Generate script and search query
     script, search_query = generate_script_with_ai(prompt, options)
 
-    # Fetch matching video from Pexels
-    download_url = search_pexels_video(search_query)
+    # Fetch matching video from Pexels or Pixabay
+    download_url = search_stock_video(search_query)
 
     # Wrap the remote URL in our local streaming proxy to prevent CORS blocks
     import urllib.parse
@@ -159,8 +159,9 @@ def parse_ai_json(text: str, default_query: str) -> tuple:
         return text, default_query
 
 
-def search_pexels_video(query: str) -> str:
-    """Search Pexels API for a matching stock video, with fallback to keyword-based stock links."""
+def search_stock_video(query: str) -> str:
+    """Search Pexels or Pixabay APIs for matching stock videos, with CDN/local fallback."""
+    import urllib.parse
     query_clean = query.strip().lower().replace('"', '').replace("'", "")
 
     # ─── Free Stock Video URLs Fallback (Stable CDNs) ────────────────────────
@@ -179,6 +180,7 @@ def search_pexels_video(query: str) -> str:
             matched_url = video_url
             break
 
+    # 1. Try Pexels Search
     pexels_key = os.getenv("PEXELS_API_KEY")
     if pexels_key:
         headers = {"Authorization": pexels_key}
@@ -189,10 +191,8 @@ def search_pexels_video(query: str) -> str:
                 data = res.json()
                 videos = data.get("videos", [])
                 if videos:
-                    # Get the video files list
                     video_files = videos[0].get("video_files", [])
                     for vf in video_files:
-                        # Prefer HD/SD quality mp4 files
                         if vf.get("quality") in ["hd", "sd"] and vf.get("file_type") == "video/mp4":
                             return vf.get("link")
                     if video_files:
@@ -200,12 +200,31 @@ def search_pexels_video(query: str) -> str:
         except Exception as e:
             print(f"[Pexels] Error searching '{query_clean}': {e}")
 
-    # Fallback to matched keyword URL, otherwise use local demo video
+    # 2. Try Pixabay Search
+    pixabay_key = os.getenv("PIXABAY_API_KEY")
+    if pixabay_key:
+        url = f"https://pixabay.com/api/videos/?key={pixabay_key}&q={urllib.parse.quote(query_clean)}&per_page=3"
+        try:
+            res = requests.get(url, timeout=8)
+            if res.status_code == 200:
+                data = res.json()
+                hits = data.get("hits", [])
+                if hits:
+                    video_obj = hits[0].get("videos", {})
+                    # Prefer medium or small MP4 links
+                    for quality in ["medium", "small", "large", "tiny"]:
+                        vf = video_obj.get(quality, {})
+                        if vf.get("url"):
+                            return vf.get("url")
+        except Exception as e:
+            print(f"[Pixabay] Error searching '{query_clean}': {e}")
+
+    # 3. Ultimate Fallback
     return matched_url if matched_url else "/demo.mp4"
 
 
 def generate_script_with_ai(prompt: str, options: dict) -> tuple:
-    """Generate script and matching search query using Gemini or OpenAI."""
+    """Generate script and matching search query using Gemini, falling back to OpenAI."""
     style = options.get("style", "dynamic")
     duration = options.get("duration", "60 seconds")
 
@@ -220,6 +239,7 @@ def generate_script_with_ai(prompt: str, options: dict) -> tuple:
     words = [w for w in prompt.split() if w.isalnum()]
     default_query = " ".join(words[:2]) if words else "coding"
 
+    # Step 1: Try Gemini
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key:
         try:
@@ -231,8 +251,9 @@ def generate_script_with_ai(prompt: str, options: dict) -> tuple:
             resp = model.generate_content(f"Write a script about: {prompt}")
             return parse_ai_json(resp.text, default_query)
         except Exception as e:
-            print(f"[Gemini] Generation failed: {e}")
+            print(f"[Gemini] Generation failed, trying OpenAI failover: {e}")
 
+    # Step 2: Try OpenAI (Failover)
     if openai.api_key:
         try:
             resp = openai.chat.completions.create(

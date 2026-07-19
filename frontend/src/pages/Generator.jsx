@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -11,6 +11,13 @@ const VOICE_OPTIONS = ['Aria (Female)', 'Marcus (Male)', 'Zara (Female)', 'Leo (
 const MUSIC_OPTIONS = ['Upbeat Electronic', 'Cinematic Epic', 'Lo-Fi Chill', 'Corporate', 'No Music']
 const CAPTION_OPTIONS = ['Animated Bold', 'Clean White', 'Neon Glow', 'None']
 
+const QUICK_TEMPLATES = [
+  { label: '🐶 Puppy Running', prompt: 'Create a 15 second video of a fluffy golden retriever puppy running happily on the grass in a sunny park.' },
+  { label: '💻 Cyberpunk Workspace', prompt: 'A coding laptop sitting on a clean desk with neon purple backlighting, code lines scrolling on screen, dynamic style.' },
+  { label: '🍳 Master Chef Cooking', prompt: 'A close up cinematic shot of a professional chef chopping colorful vegetables on a wooden cutting board in a high-end kitchen.' },
+  { label: '🏖 Sunset Ocean', prompt: 'Beautiful aerial view of blue ocean waves gently crashing onto a sandy beach at sunset, cinematic travel style.' },
+]
+
 const GEN_STEPS = [
   { id: 'script', label: 'Writing AI script' },
   { id: 'visuals', label: 'Selecting visuals' },
@@ -22,20 +29,43 @@ export default function Generator() {
   const { token } = useAuth()
   const [form, setForm] = useState({
     prompt: '',
-    duration: '60 seconds',
+    duration: '15 seconds',
     format: '9:16 (Reels/Shorts)',
     style: 'Cinematic',
     voice: 'Marcus (Male)',
     music: 'Upbeat Electronic',
     captions: 'Animated Bold',
+    visualMode: 'stock', // stock | ai_slideshow
   })
   const [phase, setPhase] = useState('idle') // idle | generating | done
   const [progress, setProgress] = useState(0)
   const [activeStep, setActiveStep] = useState('')
   const [doneSteps, setDoneSteps] = useState([])
   const [result, setResult] = useState(null)
+  
+  // Script editor state
+  const [editableScript, setEditableScript] = useState('')
+
+  // AI image slideshow states
+  const [slideshowImages, setSlideshowImages] = useState([])
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  
+  const handleTemplateClick = (promptText) => {
+    setForm({ ...form, prompt: promptText })
+    toast.success('Template loaded!')
+  }
+
+  // Slideshow image rotation logic
+  useEffect(() => {
+    if (phase === 'done' && form.visualMode === 'ai_slideshow' && slideshowImages.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentSlideIndex((prev) => (prev + 1) % slideshowImages.length)
+      }, 4000)
+      return () => clearInterval(interval)
+    }
+  }, [phase, form.visualMode, slideshowImages])
 
   const generate = async () => {
     if (!form.prompt.trim()) { toast.error('Please enter a prompt first!'); return }
@@ -43,6 +73,8 @@ export default function Generator() {
     setProgress(0)
     setDoneSteps([])
     setResult(null)
+    setSlideshowImages([])
+    setCurrentSlideIndex(0)
 
     // Simulate step-by-step progress
     const steps = ['script', 'visuals', 'voice', 'render']
@@ -51,7 +83,7 @@ export default function Generator() {
     for (let i = 0; i < steps.length; i++) {
       setActiveStep(steps[i])
       setProgress(pcts[i])
-      await new Promise((r) => setTimeout(r, 1200))
+      await new Promise((r) => setTimeout(r, 1000))
       setDoneSteps((prev) => [...prev, steps[i]])
     }
 
@@ -63,16 +95,29 @@ export default function Generator() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setResult(data)
+      setEditableScript(data.script || '')
+      
+      // If AI Image Slideshow is selected, pre-generate Pollinations image URLs based on keywords
+      if (form.visualMode === 'ai_slideshow') {
+        const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
+        const queries = queryWords.length >= 2 ? queryWords : ['cute', 'puppy', 'play', 'happy']
+        const urls = queries.map((q, idx) => 
+          `https://image.pollinations.ai/prompt/${encodeURIComponent(form.prompt + ' scene ' + (idx+1) + ', high quality, photorealistic')}?width=1024&height=1024&seed=${idx + 42}`
+        )
+        setSlideshowImages(urls)
+      }
     } catch {
       // Use demo result if backend not running
+      const dummyScript = `Here is a custom script generated for: "${form.prompt}". Optimize your parameters for the perfect post.`
       setResult({
-        title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '…' : form.prompt,
-        script: `Here is an AI-generated script for: "${form.prompt}". The script is optimised for short-form content with a hook in the first 3 seconds, followed by 3 key points and a strong call-to-action.`,
+        title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '...' : form.prompt,
+        script: dummyScript,
         duration: form.duration,
         format: form.format,
         style: form.style,
-        download_url: '#',
+        download_url: '/demo.mp4',
       })
+      setEditableScript(dummyScript)
     }
 
     setActiveStep('')
@@ -85,143 +130,253 @@ export default function Generator() {
     setDoneSteps([])
     setActiveStep('')
     setResult(null)
+    setEditableScript('')
+    setSlideshowImages([])
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-57px)]">
+    <div className="flex min-h-[calc(100vh-77px)] bg-surface-0">
       <Sidebar />
-      <main className="flex-1 p-7 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-xl font-bold text-white mb-1">Generate a video</h1>
-          <p className="text-sm text-slate-400 mb-6">Describe what you want — our AI handles the script, visuals, and editing.</p>
-
-          {/* Prompt box */}
-          <div className="card p-5 mb-4">
-            <label className="section-label">Your prompt</label>
-            <textarea
-              name="prompt"
-              value={form.prompt}
-              onChange={handleChange}
-              rows={4}
-              disabled={phase === 'generating'}
-              placeholder="e.g. Create a 60-second reel about the top 3 benefits of learning to code in 2025, with an energetic tech vibe and motivational tone..."
-              className="input-field resize-none"
-            />
-
-            {/* Options grid */}
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              {[
-                { name: 'duration', label: 'Duration', opts: DURATION_OPTIONS },
-                { name: 'format', label: 'Format', opts: FORMAT_OPTIONS },
-                { name: 'style', label: 'Style', opts: STYLE_OPTIONS },
-                { name: 'voice', label: 'Voice', opts: VOICE_OPTIONS },
-                { name: 'music', label: 'Music', opts: MUSIC_OPTIONS },
-                { name: 'captions', label: 'Captions', opts: CAPTION_OPTIONS },
-              ].map(({ name, label, opts }) => (
-                <div key={name}>
-                  <label className="text-[10px] text-slate-500 block mb-1.5">{label}</label>
-                  <select
-                    name={name}
-                    value={form[name]}
-                    onChange={handleChange}
-                    disabled={phase === 'generating'}
-                    className="w-full bg-surface-1 border border-border rounded-lg px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand"
-                  >
-                    {opts.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              ))}
+      
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+          
+          {/* Left Panel: Settings */}
+          <div className="flex-1 flex flex-col gap-6">
+            <div>
+              <h1 className="text-2xl font-extrabold text-white mb-2 tracking-tight">AI Generation Studio</h1>
+              <p className="text-xs text-slate-400">Set your prompt settings and visual preferences. Our AI handles the script, voice, and editing flow.</p>
             </div>
 
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={generate}
-                disabled={phase === 'generating'}
-                className="btn-primary text-sm px-6 py-2.5 rounded-xl disabled:opacity-50"
-              >
-                ✦ Generate Video
-              </button>
-              {phase === 'done' && (
-                <button onClick={reset} className="btn-ghost text-sm px-5 py-2.5 rounded-xl">
-                  Generate Another
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Progress */}
-          {phase === 'generating' && (
-            <div className="card p-5 mb-4">
-              <p className="text-sm text-slate-300 mb-3">
-                {GEN_STEPS.find((s) => s.id === activeStep)?.label || 'Processing...'}
-              </p>
-              <div className="h-2 bg-surface-1 rounded-full overflow-hidden mb-4">
-                <div
-                  className="h-full progress-shimmer rounded-full transition-all duration-700"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+            {/* Quick Templates */}
+            <div className="card-glass p-5">
+              <label className="section-label">Quick Templates</label>
               <div className="flex flex-wrap gap-2">
-                {GEN_STEPS.map((s) => {
-                  const done = doneSteps.includes(s.id)
-                  const active = activeStep === s.id
-                  return (
-                    <span
-                      key={s.id}
-                      className={`text-[11px] px-3 py-1 rounded-full border transition-all ${
-                        done
-                          ? 'bg-green-500/10 border-green-500/50 text-green-400'
-                          : active
-                          ? 'bg-brand/10 border-brand/50 text-brand-light'
-                          : 'bg-surface-1 border-border text-slate-500'
-                      }`}
-                    >
-                      {done ? '✓ ' : active ? '◉ ' : '○ '}
-                      {s.label}
-                    </span>
-                  )
-                })}
+                {QUICK_TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.label}
+                    onClick={() => handleTemplateClick(tmpl.prompt)}
+                    disabled={phase === 'generating'}
+                    className="bg-white/[0.03] hover:bg-brand/15 hover:border-brand/30 border border-white/[0.06] text-slate-300 hover:text-brand-light text-xs font-bold px-3 py-2 rounded-xl transition-all duration-300"
+                  >
+                    {tmpl.label}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
 
-          {/* Result */}
-          {phase === 'done' && result && (
-            <div className="card p-5 border-green-500/30">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-green-400">✓ Your video is ready!</span>
-                <a href={result.download_url || '#'} className="btn-primary text-xs px-4 py-2 rounded-lg">
-                  ⬇ Download
-                </a>
-              </div>
-
-              {/* Real Video Player */}
-              <div className="rounded-2xl mb-4 overflow-hidden bg-surface-1 border border-border aspect-video flex items-center justify-center">
-                <video
-                  src={result.download_url || "/demo.mp4"}
-                  controls
-                  className="w-full h-full object-contain"
-                  style={{ maxHeight: '320px' }}
+            {/* Input Options Card */}
+            <div className="card-glass p-6 flex flex-col gap-5">
+              <div>
+                <label className="section-label">Describe your video topic</label>
+                <textarea
+                  name="prompt"
+                  value={form.prompt}
+                  onChange={handleChange}
+                  rows={4}
+                  disabled={phase === 'generating'}
+                  placeholder="e.g. A golden retriever puppy playing on the grass..."
+                  className="input-field resize-none text-sm"
                 />
               </div>
 
-              <p className="text-sm font-semibold text-white mb-2">{result.title}</p>
-              <div className="flex gap-2 flex-wrap mb-4">
-                {[result.duration, result.format, result.style, 'AI Generated'].map((t) => t && (
-                  <span key={t} className="text-[11px] px-2.5 py-0.5 rounded-full bg-brand/20 border border-brand/40 text-brand-light">
-                    {t}
-                  </span>
+              {/* Visual Mode selector */}
+              <div>
+                <label className="section-label">Visual Match Mode</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setForm({ ...form, visualMode: 'stock' })}
+                    disabled={phase === 'generating'}
+                    className={`px-4 py-3 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                      form.visualMode === 'stock'
+                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🎥 Stock Video Match
+                    <span className="text-[10px] font-medium opacity-70">Search stock footage (Mixkit/Pexels)</span>
+                  </button>
+                  <button
+                    onClick={() => setForm({ ...form, visualMode: 'ai_slideshow' })}
+                    disabled={phase === 'generating'}
+                    className={`px-4 py-3 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                      form.visualMode === 'ai_slideshow'
+                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🎨 Custom AI Slideshow
+                    <span className="text-[10px] font-medium opacity-70">Generate unique AI images (Free)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Parameter Settings Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {[
+                  { name: 'duration', label: 'Duration', opts: DURATION_OPTIONS },
+                  { name: 'format', label: 'Format', opts: FORMAT_OPTIONS },
+                  { name: 'style', label: 'Style', opts: STYLE_OPTIONS },
+                  { name: 'voice', label: 'Voice', opts: VOICE_OPTIONS },
+                  { name: 'music', label: 'Music', opts: MUSIC_OPTIONS },
+                  { name: 'captions', label: 'Captions', opts: CAPTION_OPTIONS },
+                ].map(({ name, label, opts }) => (
+                  <div key={name} className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</label>
+                    <select
+                      name={name}
+                      value={form[name]}
+                      onChange={handleChange}
+                      disabled={phase === 'generating'}
+                      className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand transition-colors duration-300"
+                    >
+                      {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
                 ))}
               </div>
 
-              {result.script && (
-                <div className="bg-surface-1 rounded-xl p-4 border border-border">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">Generated Script</p>
-                  <p className="text-xs text-slate-300 leading-relaxed">{result.script}</p>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={generate}
+                  disabled={phase === 'generating'}
+                  className="btn-primary text-sm px-6 py-3.5 rounded-2xl flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  ✦ Start Generating Video
+                </button>
+                {phase === 'done' && (
+                  <button onClick={reset} className="btn-secondary text-sm px-6 py-3.5 rounded-2xl">
+                    Clear Workspace
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Panel: Workspace Preview */}
+          <div className="w-full lg:w-[450px] flex flex-col gap-6">
+            
+            {/* Real-time Video Render Screen */}
+            <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
+              <label className="section-label">Video Rendering Monitor</label>
+              
+              <div className="aspect-[9/16] max-h-[500px] w-full rounded-2xl overflow-hidden bg-surface-0 border border-white/[0.04] relative flex items-center justify-center shadow-inner">
+                {phase === 'idle' && (
+                  <div className="text-center p-8 flex flex-col items-center gap-3">
+                    <div className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-400 text-xl spin-slow">
+                      ⚙
+                    </div>
+                    <p className="text-xs text-slate-500 font-bold">Studio Screen Offline</p>
+                    <p className="text-[10px] text-slate-600 leading-normal max-w-[200px]">Describe your idea and start generation to trigger visual playback.</p>
+                  </div>
+                )}
+
+                {phase === 'generating' && (
+                  <div className="text-center p-8 flex flex-col items-center gap-4 z-10">
+                    <div className="relative w-16 h-16 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-4 border-brand/20 border-t-brand animate-spin"></div>
+                      <span className="text-[10px] font-extrabold text-brand-light">{progress}%</span>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white mb-1">
+                        {GEN_STEPS.find((s) => s.id === activeStep)?.label || 'Processing...'}
+                      </p>
+                      <p className="text-[10px] text-slate-500">Generating script & visual coordinates</p>
+                    </div>
+                  </div>
+                )}
+
+                {phase === 'done' && result && (
+                  <div className="w-full h-full relative">
+                    {form.visualMode === 'stock' ? (
+                      <video
+                        src={result.download_url}
+                        controls
+                        autoPlay
+                        loop
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      // AI Image Slideshow Player
+                      <div className="w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
+                        {slideshowImages.map((url, idx) => (
+                          <div
+                            key={url}
+                            className={`absolute inset-0 transition-opacity duration-1000 ${
+                              currentSlideIndex === idx ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          >
+                            <img
+                              src={url}
+                              alt={`slide-${idx}`}
+                              className="w-full h-full object-cover transform scale-110 animate-pulse"
+                              style={{ animationDuration: '4s' }}
+                            />
+                          </div>
+                        ))}
+                        {/* Slide indicators overlay */}
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-20">
+                          {slideshowImages.map((_, idx) => (
+                            <span
+                              key={idx}
+                              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                currentSlideIndex === idx ? 'bg-brand w-4' : 'bg-white/30'
+                              }`}
+                            ></span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Captions overlay */}
+                    {form.captions !== 'None' && (
+                      <div className="absolute bottom-16 left-4 right-4 bg-black/60 backdrop-blur-sm border border-white/5 p-3 rounded-xl text-center text-xs font-bold text-white z-10">
+                        💬 Caption Overlay Preview Active
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {phase === 'done' && result && (
+                <div className="flex gap-2">
+                  <a
+                    href={result.download_url}
+                    download="reelify_video.mp4"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary text-xs font-bold px-4 py-3 rounded-xl flex-1 text-center"
+                  >
+                    ⬇ Download Video
+                  </a>
                 </div>
               )}
             </div>
-          )}
+
+            {/* Generated Script Editor */}
+            {phase === 'done' && result && (
+              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-3">
+                <label className="section-label">Interactive Script Editor</label>
+                <textarea
+                  value={editableScript}
+                  onChange={(e) => setEditableScript(e.target.value)}
+                  rows={5}
+                  className="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 text-xs text-slate-300 leading-relaxed focus:outline-none focus:border-brand resize-none"
+                />
+                <button
+                  onClick={() => {
+                    toast.success('Script saved successfully!')
+                    setResult({ ...result, script: editableScript })
+                  }}
+                  className="bg-brand/10 hover:bg-brand/20 border border-brand/20 text-brand-light text-[10px] font-bold py-2 rounded-xl transition-all duration-300"
+                >
+                  Save Script Edits
+                </button>
+              </div>
+            )}
+
+          </div>
+
         </div>
       </main>
     </div>
