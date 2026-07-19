@@ -1,57 +1,91 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import toast from 'react-hot-toast'
 
-const features = [
-  { 
-    color: 'from-brand to-brand-glow', 
-    title: 'AI Scriptwriting', 
-    desc: 'Describe your concept in natural language. Our dual-engine writer builds a viral short-form script optimized for audience watch-time.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-      </svg>
-    )
+// Background visual cards representing the Google Flow background wall
+const BACKGROUND_MEDIA = [
+  { url: 'https://images.unsplash.com/photo-1598974357801-cbca100e65d3?q=80&w=500', title: 'Horse' },
+  { url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?q=80&w=500', title: 'Astronaut' },
+  { url: 'https://images.unsplash.com/photo-1508817628294-5a453fa0b8fb?q=80&w=500', title: 'Tiger' },
+  { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=500', title: 'Mountains' },
+  { url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=500', title: 'Cyber Car' },
+  { url: 'https://images.unsplash.com/photo-1483347756197-71ef80e95f73?q=80&w=500', title: 'Aurora' },
+  { url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=500', title: 'Coffee' },
+  { url: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?q=80&w=500', title: 'Surfer' },
+]
+
+// 10 Fixed Cinematic Topics for Auto-Command Prompt Sandbox
+const PRESET_TOPICS = [
+  {
+    id: 'horse',
+    label: '🐎 Majestic Wild Horse',
+    prompt: 'A majestic white horse running through desert sand dunes, golden hour lighting, cinematic.',
+    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Majestic%20white%20horse%20running%20in%20desert%20dunes%20photorealistic?width=1024&height=1024&seed=10'
   },
-  { 
-    color: 'from-blue-500 to-indigo-500', 
-    title: 'Dynamic Asset Matching', 
-    desc: 'Intelligently parses generated keywords and automatically queries stock video clips matching your theme with fluid B-rolls.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    )
+  {
+    id: 'space',
+    label: '👨‍🚀 Astronaut Space Walk',
+    prompt: 'An astronaut slowly floating in open space, reflection of Earth in the visor, realistic.',
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Astronaut%20floating%20in%20deep%20space%20with%20earth%20reflection%20photorealistic?width=1024&height=1024&seed=20'
   },
-  { 
-    color: 'from-amber-500 to-orange-500', 
-    title: 'Voice Assistant Promoter', 
-    desc: 'Speak your creative prompts directly into the app using our voice assistant module for completely hands-free workspace setup.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-      </svg>
-    )
+  {
+    id: 'tiger',
+    label: '🐯 Tiger in Snow',
+    prompt: 'A majestic Siberian tiger walking slowly through thick snow in a dense pine forest.',
+    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Majestic%20Siberian%20tiger%20walking%20in%20snowy%20pine%20forest%20photorealistic?width=1024&height=1024&seed=30'
   },
-  { 
-    color: 'from-teal-500 to-emerald-500', 
-    title: 'Pre-designed Templates', 
-    desc: 'Launch short-form video generation in a single click with pre-populated parameters optimized for animals, technology, and travel.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-      </svg>
-    )
+  {
+    id: 'mountain',
+    label: '🌅 Mountain Drone View',
+    prompt: 'Breathtaking drone flyover of snow-capped mountains at sunrise, clouds parting, 8k.',
+    videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Breathtaking%20aerial%20drone%20flyover%20of%20snowy%20mountain%20peaks%20at%20sunrise?width=1024&height=1024&seed=40'
   },
-  { 
-    color: 'from-cyan-500 to-blue-500', 
-    title: 'Dynamic Ken Burns Slideshow', 
-    desc: 'Compiles custom generated images with animated panning and zoom effects, synced to caption displays for a premium storytelling feel.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-      </svg>
-    )
+  {
+    id: 'chef',
+    label: '🍳 Chef Sizzling Pan',
+    prompt: 'Close up of a professional chef flipping pasta in a hot skillet with a burst of fire.',
+    videoUrl: 'https://github.com/intel-iot-devkit/sample-videos/raw/master/classroom.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Close%20up%20of%20chef%20cooking%20in%20high%20end%20kitchen%20with%20fire%20flare%20photorealistic?width=1024&height=1024&seed=50'
+  },
+  {
+    id: 'car',
+    label: '🚗 Cyberpunk Sports Car',
+    prompt: 'A sleek black sports car driving fast along a wet neon-lit highway at night, cyberpunk reflections.',
+    videoUrl: 'https://github.com/intel-iot-devkit/sample-videos/raw/master/people-detection.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Cyberpunk%20sports%20car%20driving%20on%20wet%20neon-lit%20highway%20at%20night%208k?width=1024&height=1024&seed=60'
+  },
+  {
+    id: 'aurora',
+    label: '🌌 Aurora Over Lake',
+    prompt: 'Stunning green aurora lights dancing across the starry night sky over a quiet lake, realistic.',
+    videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Aurora%20borealis%20green%20lights%20dancing%20over%20quiet%20northern%20lake%20photorealistic?width=1024&height=1024&seed=70'
+  },
+  {
+    id: 'coffee',
+    label: '☕ Espresso Slow Pour',
+    prompt: 'Creamy hot coffee espresso being poured slowly into a glass mug, slow motion, cinematic.',
+    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Creamy%20hot%20coffee%20espresso%20pouring%20into%20glass%20mug%20slow%20motion%20photorealistic?width=1024&height=1024&seed=80'
+  },
+  {
+    id: 'coding',
+    label: '💻 Minimalist Developer',
+    prompt: 'A clean coding workspace setup with ambient purple backlighting, code scrolling on screen.',
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Clean%20minimalist%20coding%20setup%20with%20ambient%20purple%20glow%20on%20desk?width=1024&height=1024&seed=90'
+  },
+  {
+    id: 'surf',
+    label: '🏄 Surfer Wave Barrel',
+    prompt: 'A surfer riding inside the barrel of a massive crystal-clear blue ocean wave, realistic.',
+    videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+    imageUrl: 'https://image.pollinations.ai/prompt/Surfer%20riding%20inside%20barrel%20of%20huge%20blue%20wave%20spray%20photorealistic?width=1024&height=1024&seed=100'
   },
 ]
 
@@ -59,142 +93,231 @@ export default function LandingPage({ onAuth }) {
   const navigate = useNavigate()
   const { isAuth } = useAuth()
 
-  // Voice Assistant state
-  const [isListening, setIsListening] = useState(false)
-  const [voiceText, setVoiceText] = useState('')
+  // Sandbox States
+  const [selectedTopic, setSelectedTopic] = useState(PRESET_TOPICS[0])
+  const [generationType, setGenerationType] = useState('video') // video | image
+  const [sandboxPhase, setSandboxPhase] = useState('idle') // idle | rendering | done
+  const [sandboxProgress, setSandboxProgress] = useState(0)
+  const [sandboxResultUrl, setSandboxResultUrl] = useState('')
 
-  const handleListen = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in your browser. Please try Chrome or Safari.")
+  // Scroll to sandbox
+  const scrollToSandbox = () => {
+    const sandboxElement = document.getElementById('sandbox-container')
+    if (sandboxElement) {
+      sandboxElement.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
+  // Handle Free Sandbox Trial (limited to once)
+  const generateSandboxDemo = async () => {
+    // Check if user has already used their free run
+    const hasUsedTrial = localStorage.getItem('has_generated_free')
+    
+    if (hasUsedTrial) {
+      toast.error('You have already used your free generation! Please sign up to continue.')
+      onAuth('signup')
       return
     }
 
-    const recognition = new SpeechRecognition()
-    recognition.continuous = false
-    recognition.lang = 'en-US'
-    recognition.interimResults = false
+    setSandboxPhase('rendering')
+    setSandboxProgress(0)
 
-    recognition.onstart = () => {
-      setIsListening(true)
+    // Simulate realistic generation steps
+    const simulationTime = 3000 // 3 seconds
+    const intervalTime = 100
+    const increment = 100 / (simulationTime / intervalTime)
+
+    const timer = setInterval(() => {
+      setSandboxProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer)
+          return 100
+        }
+        return Math.min(prev + increment, 100)
+      })
+    }, intervalTime)
+
+    await new Promise(resolve => setTimeout(resolve, simulationTime))
+
+    // Set the result URL based on selection
+    if (generationType === 'video') {
+      // Wrap remote video in proxy to guarantee playback
+      setSandboxResultUrl(`/api/video_stream?url=${encodeURIComponent(selectedTopic.videoUrl)}`)
+    } else {
+      // Call our Google image proxy route
+      setSandboxResultUrl(`/api/generate_image?prompt=${encodeURIComponent(selectedTopic.prompt)}&seed=42`)
     }
 
-    recognition.onend = () => {
-      setIsListening(false)
-    }
-
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript
-      setVoiceText(text)
-    }
-
-    recognition.start()
-  }
-
-  const navigateWithPrompt = () => {
-    if (!voiceText) return
-    navigate('/generate', { state: { initialPrompt: voiceText } })
+    // Flag the local storage so they can only try once
+    localStorage.setItem('has_generated_free', 'true')
+    setSandboxPhase('done')
+    toast.success('Cinematic demo generated successfully!')
   }
 
   return (
-    <main className="min-h-screen relative overflow-hidden pb-20">
-      {/* Decorative Glows */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand/10 rounded-full blur-3xl -z-10"></div>
-      <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-brand-glow/10 rounded-full blur-3xl -z-10"></div>
+    <main className="min-h-screen relative overflow-hidden pb-24 bg-surface-0">
+      
+      {/* ─── GOOGLE FLOW STYLE MEDIA WALL BACKGROUND ─── */}
+      <div className="absolute inset-0 grid grid-cols-2 md:grid-cols-4 gap-3.5 opacity-20 -z-20 overflow-hidden scale-105 pointer-events-none select-none">
+        {BACKGROUND_MEDIA.map((m, idx) => (
+          <div 
+            key={idx} 
+            className="aspect-[9/16] md:aspect-[3/4] bg-cover bg-center rounded-3xl border border-white/[0.03] transition-all"
+            style={{ backgroundImage: `url(${m.url})` }}
+          />
+        ))}
+      </div>
+      
+      {/* Background radial overlays */}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-0/60 via-surface-0/80 to-surface-0 -z-10 pointer-events-none"></div>
 
-      {/* Hero Section */}
-      <section className="relative text-center px-6 pt-24 pb-16 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/20 rounded-full px-4 py-1.5 text-xs font-semibold text-brand-light mb-8 shadow-glow">
-          <span className="animate-pulse">✦</span> Next-Gen AI Video Studio
-        </div>
-        
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1] text-white">
-          Turn Ideas Into <br />
-          <span className="bg-gradient-to-r from-brand-light via-brand-glow to-purple-400 bg-clip-text text-transparent">
-            Viral Reels in Seconds
-          </span>
+      {/* ─── HERO BRANDING HEADER (Google Flow Layout) ─── */}
+      <section className="relative text-center px-6 pt-32 pb-20 max-w-4xl mx-auto flex flex-col items-center">
+        <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-6 select-none select-none select-none">
+          Reelify
         </h1>
         
-        <p className="text-slate-400 text-base md:text-lg max-w-xl mx-auto mb-12 leading-relaxed">
-          Write a simple prompt. Reelify's unified AI platform writes your script, gathers the visual assets, and renders your finished video — instantly.
+        <p className="text-slate-300 text-lg md:text-xl font-medium max-w-lg mb-12 leading-relaxed text-slate-400">
+          Your AI creative studio built with advanced generative models.
         </p>
 
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <button 
-            onClick={() => navigate('/generate')} 
-            className="btn-primary text-sm px-8 py-4 rounded-2xl flex items-center gap-2 group shadow-glow"
-          >
-            Create a Video Now
-            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-          </button>
-          {!isAuth && (
-            <button 
-              onClick={() => onAuth('signup')} 
-              className="btn-secondary text-sm px-8 py-4 rounded-2xl"
-            >
-              Sign up free
-            </button>
-          )}
-        </div>
+        <button 
+          onClick={scrollToSandbox}
+          className="bg-white text-black font-extrabold text-sm px-8 py-4 rounded-full hover:bg-slate-200 transition-all duration-300 shadow-2xl hover:scale-105"
+        >
+          Create with Reelify
+        </button>
       </section>
 
-      {/* Interactive Voice Assistant Sandbox Section (Kept ABOVE Platform Demonstration) */}
-      <section className="px-6 mb-16 max-w-3xl mx-auto">
-        <div className="card-glass p-6 md:p-8 border-brand/20 relative shadow-glow">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-brand-glow/10 rounded-full blur-2xl"></div>
-          <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-white mb-2 flex items-center justify-center gap-2">
-              🎙 Voice Assistant Sandbox
+      {/* ─── INTERACTIVE SANDBOX: TRY WITH REELIFY ONCE ─── */}
+      <section id="sandbox-container" className="px-6 mb-28 max-w-4xl mx-auto scroll-mt-24">
+        <div className="card-glass p-8 md:p-10 border-brand/20 relative shadow-glow-strong">
+          
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4 shadow-glow">
+              ⚡ Try with Reelify Once
+            </div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
+              Free Generation Sandbox
             </h2>
-            <p className="text-xs text-slate-400">Click the microphone to command a prompt verbally, then send it straight to the editor.</p>
+            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+              Select one of the 10 cinematic preset prompts below. Get one free photorealistic image or video generation before signing up.
+            </p>
           </div>
 
-          <div className="flex flex-col items-center gap-4">
-            <button
-              onClick={handleListen}
-              className={`w-16 h-16 rounded-full flex items-center justify-center border transition-all duration-300 ${
-                isListening 
-                  ? 'bg-brand-glow border-brand-glow text-white shadow-glow-strong scale-110 animate-pulse'
-                  : 'bg-white/[0.04] border-white/10 text-slate-300 hover:border-brand/40 hover:text-white'
-              }`}
-            >
-              {isListening ? (
-                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              )}
-            </button>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left: Preset Prompts Selection & Controls */}
+            <div className="flex-1 flex flex-col gap-6">
+              <div>
+                <label className="section-label">Select a Preset Cinematic Topic</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                  {PRESET_TOPICS.map((topic) => (
+                    <button
+                      key={topic.id}
+                      onClick={() => {
+                        if (sandboxPhase !== 'rendering') {
+                          setSelectedTopic(topic)
+                        }
+                      }}
+                      className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                        selectedTopic.id === topic.id
+                          ? 'bg-brand/10 border-brand/40 text-brand-light'
+                          : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {topic.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="w-full bg-black/35 rounded-2xl border border-white/[0.06] p-4 min-h-[70px] flex items-center justify-center text-center">
-              {isListening ? (
-                <p className="text-xs text-brand-light italic">Listening... Speak now</p>
-              ) : voiceText ? (
-                <p className="text-xs text-white leading-normal font-medium">{voiceText}</p>
-              ) : (
-                <p className="text-xs text-slate-500">Your dictated prompt will appear here.</p>
-              )}
+              {/* Mode Options Selection */}
+              <div>
+                <label className="section-label">Generation Mode</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setGenerationType('video')}
+                    className={`py-3 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                      generationType === 'video'
+                        ? 'bg-brand/15 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400'
+                    }`}
+                  >
+                    🎥 Video Rendering
+                  </button>
+                  <button
+                    onClick={() => setGenerationType('image')}
+                    className={`py-3 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                      generationType === 'image'
+                        ? 'bg-brand/15 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400'
+                    }`}
+                  >
+                    🎨 Image generation
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={generateSandboxDemo}
+                disabled={sandboxPhase === 'rendering'}
+                className="btn-primary text-xs font-bold py-4 rounded-xl shadow-glow w-full flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {sandboxPhase === 'rendering' ? 'Rendering Free Trial...' : 'Generate Free Demo'}
+              </button>
             </div>
 
-            {voiceText && (
-              <button
-                onClick={navigateWithPrompt}
-                className="btn-primary text-xs px-5 py-2.5 rounded-xl shadow-glow animate-fade-in"
-              >
-                Go to Generation Studio ↗
-              </button>
-            )}
+            {/* Right: Render Preview Screen */}
+            <div className="w-full lg:w-[320px] flex flex-col gap-4">
+              <label className="section-label">Rendering Screen Monitor</label>
+              
+              <div className="aspect-[9/16] max-h-[380px] w-full rounded-2xl overflow-hidden bg-surface-0 border border-white/[0.04] relative flex items-center justify-center shadow-inner">
+                {sandboxPhase === 'idle' && (
+                  <div className="text-center p-6 flex flex-col items-center gap-2">
+                    <div className="text-2xl animate-pulse">📺</div>
+                    <p className="text-[10px] text-slate-500 font-bold">Screen Offline</p>
+                    <p className="text-[9px] text-slate-600 leading-normal max-w-[160px]">Select a cinematic topic and click Generate to start.</p>
+                  </div>
+                )}
+
+                {sandboxPhase === 'rendering' && (
+                  <div className="text-center p-6 flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-4 border-brand/20 border-t-brand animate-spin"></div>
+                      <span className="text-[9px] font-extrabold text-brand-light">{Math.round(sandboxProgress)}%</span>
+                    </div>
+                    <p className="text-[10px] font-bold text-white">Rendering visuals...</p>
+                  </div>
+                )}
+
+                {sandboxPhase === 'done' && sandboxResultUrl && (
+                  <div className="w-full h-full">
+                    {generationType === 'video' ? (
+                      <video
+                        src={sandboxResultUrl}
+                        controls
+                        autoPlay
+                        loop
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={sandboxResultUrl}
+                        alt="AI Generation sandbox"
+                        className="w-full h-full object-cover transform scale-105 animate-pulse"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* UI Showcase / Mockup Area (Kept BELOW Voice Assistant Sandbox) */}
-      <section className="px-6 mb-24 max-w-5xl mx-auto">
+      {/* ─── BRAND PREVIEW SHOWCASE ─── */}
+      <section className="px-6 mb-28 max-w-5xl mx-auto">
         <div className="card-glass p-3 relative shadow-glow-strong">
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-brand/25 to-brand-glow/25 blur-xl opacity-40 -z-10"></div>
           <div className="bg-surface-0 rounded-2xl border border-white/[0.04] p-5 aspect-[16/9] flex items-center justify-center overflow-hidden relative">
@@ -212,7 +335,7 @@ export default function LandingPage({ onAuth }) {
         </div>
       </section>
 
-      {/* Features Grid */}
+      {/* ─── DYNAMIC FEATURES GRID ─── */}
       <section className="px-6 max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-white mb-3">Everything you need to go viral</h2>
