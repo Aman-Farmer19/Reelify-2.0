@@ -38,7 +38,7 @@ export default function Generator() {
     voice: 'Marcus (Male)',
     music: 'Upbeat Electronic',
     captions: 'Animated Bold',
-    visualMode: 'stock', // stock | ai_slideshow
+    visualMode: 'stock', // stock | ai_slideshow | upload
   })
   const [phase, setPhase] = useState('idle') // idle | generating | done
   const [progress, setProgress] = useState(0)
@@ -48,6 +48,10 @@ export default function Generator() {
   
   // Voice state
   const [isListening, setIsListening] = useState(false)
+
+  // Canva / Custom Upload States
+  const [uploadedFileUrl, setUploadedFileUrl] = useState('')
+  const [uploadedFileName, setUploadedFileName] = useState('')
 
   // Script editor state
   const [editableScript, setEditableScript] = useState('')
@@ -97,6 +101,30 @@ export default function Generator() {
     recognition.start()
   }
 
+  // Upload custom Canva exported assets
+  const handleAssetUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploadedFileName(file.name)
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadToast = toast.loading('Uploading asset to workspace...')
+    try {
+      const { data } = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        }
+      })
+      setUploadedFileUrl(data.url)
+      toast.success('Canva asset loaded successfully!', { id: uploadToast })
+    } catch (err) {
+      toast.error('Upload failed. Please try again.', { id: uploadToast })
+    }
+  }
+
   // Slideshow image rotation logic
   useEffect(() => {
     if (phase === 'done' && form.visualMode === 'ai_slideshow' && slideshowImages.length > 0) {
@@ -131,9 +159,15 @@ export default function Generator() {
     try {
       const { data } = await axios.post(
         '/api/generate',
-        { prompt: form.prompt, options: form },
+        { prompt: form.prompt, options: { ...form, uploadedUrl: uploadedFileUrl } },
         { headers: { Authorization: `Bearer ${token}` } }
       )
+      
+      // Override output URL if custom Canva upload is active
+      if (form.visualMode === 'upload' && uploadedFileUrl) {
+        data.download_url = uploadedFileUrl
+      }
+
       setResult(data)
       setEditableScript(data.script || '')
       
@@ -160,7 +194,7 @@ export default function Generator() {
         duration: form.duration,
         format: form.format,
         style: form.style,
-        download_url: '/demo.mp4',
+        download_url: (form.visualMode === 'upload' && uploadedFileUrl) ? uploadedFileUrl : '/demo.mp4',
       })
       setEditableScript(dummyScript)
     }
@@ -245,33 +279,73 @@ export default function Generator() {
               {/* Visual Mode selector */}
               <div>
                 <label className="section-label">Visual Match Mode</label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <button
                     onClick={() => setForm({ ...form, visualMode: 'stock' })}
                     disabled={phase === 'generating'}
-                    className={`px-4 py-3 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
                       form.visualMode === 'stock'
                         ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
                         : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
                     }`}
                   >
                     🎥 Stock Video Match
-                    <span className="text-[10px] font-medium opacity-70">Search stock footage (Mixkit/Pexels)</span>
+                    <span className="text-[9px] font-medium opacity-70">Search footage</span>
                   </button>
                   <button
                     onClick={() => setForm({ ...form, visualMode: 'ai_slideshow' })}
                     disabled={phase === 'generating'}
-                    className={`px-4 py-3 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
                       form.visualMode === 'ai_slideshow'
                         ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
                         : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
                     }`}
                   >
-                    🎨 Custom AI Slideshow (Nano Banana)
-                    <span className="text-[10px] font-medium opacity-70">Generate unique images with Nano Banana</span>
+                    🎨 AI Slideshow
+                    <span className="text-[9px] font-medium opacity-70">Nano Banana images</span>
+                  </button>
+                  <button
+                    onClick={() => setForm({ ...form, visualMode: 'upload' })}
+                    disabled={phase === 'generating'}
+                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                      form.visualMode === 'upload'
+                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    📤 Canva / Local Upload
+                    <span className="text-[9px] font-medium opacity-70">Upload Canva files</span>
                   </button>
                 </div>
               </div>
+
+              {/* Canva/Local Upload Form UI */}
+              {form.visualMode === 'upload' && (
+                <div className="bg-white/[0.02] border border-white/[0.08] p-4 rounded-2xl flex flex-col gap-3">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Upload Canva Video / Image Export
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="video/*,image/*"
+                      onChange={handleAssetUpload}
+                      disabled={phase === 'generating'}
+                      className="hidden"
+                      id="canva-asset-upload"
+                    />
+                    <label
+                      htmlFor="canva-asset-upload"
+                      className="bg-white/[0.04] hover:bg-brand/10 hover:border-brand/30 border border-white/10 text-slate-300 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all"
+                    >
+                      Choose file
+                    </label>
+                    <span className="text-xs text-slate-500 truncate max-w-[200px]">
+                      {uploadedFileName || 'No file selected'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Parameter Settings Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -301,7 +375,7 @@ export default function Generator() {
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={generate}
-                  disabled={phase === 'generating'}
+                  disabled={phase === 'generating' || (form.visualMode === 'upload' && !uploadedFileUrl)}
                   className="btn-primary text-sm px-6 py-3.5 rounded-2xl flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   ✦ Start Generating Video
@@ -358,6 +432,22 @@ export default function Generator() {
                         loop
                         className="w-full h-full object-cover"
                       />
+                    ) : form.visualMode === 'upload' ? (
+                      uploadedFileUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
+                        <video
+                          src={result.download_url}
+                          controls
+                          autoPlay
+                          loop
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={result.download_url}
+                          alt="Custom Canva upload"
+                          className="w-full h-full object-cover"
+                        />
+                      )
                     ) : (
                       // AI Image Slideshow Player
                       <div className="w-full h-full relative bg-black flex items-center justify-center overflow-hidden">

@@ -3,17 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
 
-// Background visual cards representing the Google Flow background wall
-const BACKGROUND_MEDIA = [
-  { url: 'https://images.unsplash.com/photo-1598974357801-cbca100e65d3?q=80&w=500', title: 'Horse' },
-  { url: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?q=80&w=500', title: 'Astronaut' },
-  { url: 'https://images.unsplash.com/photo-1508817628294-5a453fa0b8fb?q=80&w=500', title: 'Tiger' },
-  { url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=500', title: 'Mountains' },
-  { url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=500', title: 'Cyber Car' },
-  { url: 'https://images.unsplash.com/photo-1483347756197-71ef80e95f73?q=80&w=500', title: 'Aurora' },
-  { url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=500', title: 'Coffee' },
-  { url: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?q=80&w=500', title: 'Surfer' },
-]
+
 
 // 10 Fixed Cinematic Topics for Auto-Command Prompt Sandbox
 const PRESET_TOPICS = [
@@ -21,7 +11,7 @@ const PRESET_TOPICS = [
     id: 'horse',
     label: '🐎 Majestic Wild Horse',
     prompt: 'A majestic white horse running through desert sand dunes, golden hour lighting, cinematic.',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     imageUrl: 'https://image.pollinations.ai/prompt/Majestic%20white%20horse%20running%20in%20desert%20dunes%20photorealistic?width=1024&height=1024&seed=10'
   },
   {
@@ -35,7 +25,7 @@ const PRESET_TOPICS = [
     id: 'tiger',
     label: '🐯 Tiger in Snow',
     prompt: 'A majestic Siberian tiger walking slowly through thick snow in a dense pine forest.',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     imageUrl: 'https://image.pollinations.ai/prompt/Majestic%20Siberian%20tiger%20walking%20in%20snowy%20pine%20forest%20photorealistic?width=1024&height=1024&seed=30'
   },
   {
@@ -70,7 +60,7 @@ const PRESET_TOPICS = [
     id: 'coffee',
     label: '☕ Espresso Slow Pour',
     prompt: 'Creamy hot coffee espresso being poured slowly into a glass mug, slow motion, cinematic.',
-    videoUrl: 'https://www.w3schools.com/html/movie.mp4',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     imageUrl: 'https://image.pollinations.ai/prompt/Creamy%20hot%20coffee%20espresso%20pouring%20into%20glass%20mug%20slow%20motion%20photorealistic?width=1024&height=1024&seed=80'
   },
   {
@@ -212,12 +202,13 @@ export default function LandingPage({ onAuth }) {
       
       {/* ─── GOOGLE FLOW STYLE MEDIA WALL BACKGROUND ─── */}
       <div className="absolute inset-0 grid grid-cols-2 md:grid-cols-4 gap-3.5 opacity-20 -z-20 overflow-hidden scale-105 pointer-events-none select-none">
-        {BACKGROUND_MEDIA.map((m, idx) => (
+        {Array.from({ length: 8 }).map((_, idx) => (
           <div 
             key={idx} 
-            className="aspect-[9/16] md:aspect-[3/4] bg-cover bg-center rounded-3xl border border-white/[0.03] transition-all"
-            style={{ backgroundImage: `url(${m.url})` }}
-          />
+            className="aspect-[9/16] md:aspect-[3/4] bg-gradient-to-br from-white/[0.01] to-white/[0.04] rounded-3xl border border-white/[0.03] relative overflow-hidden flex items-center justify-center"
+          >
+            <div className="absolute w-24 h-24 rounded-full bg-brand/10 blur-xl"></div>
+          </div>
         ))}
       </div>
       
@@ -226,12 +217,12 @@ export default function LandingPage({ onAuth }) {
 
       {/* ─── HERO BRANDING HEADER (Google Flow Layout) ─── */}
       <section className="relative text-center px-6 pt-32 pb-20 max-w-4xl mx-auto flex flex-col items-center">
-        <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-6 select-none select-none select-none">
+        <h1 className="text-7xl md:text-9xl font-black tracking-tighter text-white mb-6 select-none">
           Reelify
         </h1>
         
-        <p className="text-slate-300 text-lg md:text-xl font-medium max-w-lg mb-12 leading-relaxed text-slate-400">
-          Your AI creative studio built with advanced generative models.
+        <p className="text-slate-300 text-base md:text-lg font-medium max-w-xl mb-12 leading-relaxed text-slate-400">
+          An AI-Powered platform that turns your prompts into stunning short videos — automatically.
         </p>
 
         <button 
