@@ -33,10 +33,10 @@ export default function AuthModal({ mode, onClose, onSwitch }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="card p-8 w-full max-w-sm mx-4 relative">
+      <div className="bg-surface-1/95 border border-white/[0.08] rounded-3xl p-8 w-full max-w-sm mx-4 relative shadow-2xl shadow-black/80">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-500 hover:text-white text-xl transition-colors"
@@ -45,13 +45,13 @@ export default function AuthModal({ mode, onClose, onSwitch }) {
         </button>
 
         {/* Tabs */}
-        <div className="flex bg-surface-1 rounded-xl p-1 mb-6">
+        <div className="flex bg-surface-2/80 rounded-2xl p-1 mb-6 border border-white/[0.04]">
           {['login', 'signup'].map((t) => (
             <button
               key={t}
               onClick={() => onSwitch(t)}
-              className={`flex-1 py-2 text-sm rounded-lg font-medium transition-all ${
-                mode === t ? 'bg-brand text-white' : 'text-slate-400'
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${
+                mode === t ? 'bg-brand text-white shadow-glow' : 'text-slate-400 hover:text-white'
               }`}
             >
               {t === 'login' ? 'Log in' : 'Sign up'}
