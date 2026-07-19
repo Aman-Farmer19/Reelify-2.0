@@ -89,6 +89,59 @@ const PRESET_TOPICS = [
   },
 ]
 
+const features = [
+  { 
+    color: 'from-brand to-brand-glow', 
+    title: 'AI Scriptwriting', 
+    desc: 'Describe your concept in natural language. Our dual-engine writer builds a viral short-form script optimized for audience watch-time.',
+    icon: (
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    )
+  },
+  { 
+    color: 'from-blue-500 to-indigo-500', 
+    title: 'Dynamic Asset Matching', 
+    desc: 'Intelligently parses generated keywords and automatically queries stock video clips matching your theme with fluid B-rolls.',
+    icon: (
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    )
+  },
+  { 
+    color: 'from-amber-500 to-orange-500', 
+    title: 'Voice Assistant Promoter', 
+    desc: 'Speak your creative prompts directly into the app using our voice assistant module for completely hands-free workspace setup.',
+    icon: (
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+      </svg>
+    )
+  },
+  { 
+    color: 'from-teal-500 to-emerald-500', 
+    title: 'Pre-designed Templates', 
+    desc: 'Launch short-form video generation in a single click with pre-populated parameters optimized for animals, technology, and travel.',
+    icon: (
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
+    )
+  },
+  { 
+    color: 'from-cyan-500 to-blue-500', 
+    title: 'Dynamic Ken Burns Slideshow', 
+    desc: 'Compiles custom generated images with animated panning and zoom effects, synced to caption displays for a premium storytelling feel.',
+    icon: (
+      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    )
+  },
+]
+
 export default function LandingPage({ onAuth }) {
   const navigate = useNavigate()
   const { isAuth } = useAuth()
