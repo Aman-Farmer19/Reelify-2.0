@@ -24,16 +24,6 @@ const features = [
     )
   },
   { 
-    color: 'from-purple-500 to-pink-500', 
-    title: 'Nano Banana Image Gen', 
-    desc: 'Integrates Google\'s new state-of-the-art Nano Banana models to generate custom photorealistic illustrations directly from your prompt keywords.',
-    icon: (
-      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 9.172V5L8 4z" />
-      </svg>
-    )
-  },
-  { 
     color: 'from-amber-500 to-orange-500', 
     title: 'Voice Assistant Promoter', 
     desc: 'Speak your creative prompts directly into the app using our voice assistant module for completely hands-free workspace setup.',
@@ -150,28 +140,8 @@ export default function LandingPage({ onAuth }) {
         </div>
       </section>
 
-      {/* UI Showcase / Mockup Area */}
-      <section className="px-6 mb-24 max-w-5xl mx-auto">
-        <div className="card-glass p-3 relative shadow-glow-strong">
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-brand/25 to-brand-glow/25 blur-xl opacity-40 -z-10"></div>
-          <div className="bg-surface-0 rounded-2xl border border-white/[0.04] p-5 aspect-[16/9] flex items-center justify-center overflow-hidden relative">
-            {/* Displaying mockup details inside showcase */}
-            <div className="absolute inset-0 bg-cover bg-center opacity-70 filter blur-[1px]" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000')" }}></div>
-            <div className="relative z-10 flex flex-col items-center justify-center text-center p-8 bg-surface-0/60 backdrop-blur-md rounded-2xl max-w-md border border-white/10">
-              <div className="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-white mb-4 animate-bounce">
-                ▶
-              </div>
-              <p className="text-white font-extrabold text-lg mb-2">Platform Demonstration</p>
-              <p className="text-xs text-slate-300 leading-normal">
-                Generates scripts dynamically with Gemini / OpenAI, automatically streams background videos, and handles complete user auth.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Voice Assistant Sandbox Section */}
-      <section className="px-6 mb-24 max-w-3xl mx-auto">
+      {/* Interactive Voice Assistant Sandbox Section (Kept ABOVE Platform Demonstration) */}
+      <section className="px-6 mb-16 max-w-3xl mx-auto">
         <div className="card-glass p-6 md:p-8 border-brand/20 relative shadow-glow">
           <div className="absolute top-0 right-0 w-24 h-24 bg-brand-glow/10 rounded-full blur-2xl"></div>
           <div className="text-center mb-6">
@@ -219,6 +189,25 @@ export default function LandingPage({ onAuth }) {
                 Go to Generation Studio ↗
               </button>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* UI Showcase / Mockup Area (Kept BELOW Voice Assistant Sandbox) */}
+      <section className="px-6 mb-24 max-w-5xl mx-auto">
+        <div className="card-glass p-3 relative shadow-glow-strong">
+          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-tr from-brand/25 to-brand-glow/25 blur-xl opacity-40 -z-10"></div>
+          <div className="bg-surface-0 rounded-2xl border border-white/[0.04] p-5 aspect-[16/9] flex items-center justify-center overflow-hidden relative">
+            <div className="absolute inset-0 bg-cover bg-center opacity-70 filter blur-[1px]" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000')" }}></div>
+            <div className="relative z-10 flex flex-col items-center justify-center text-center p-8 bg-surface-0/60 backdrop-blur-md rounded-2xl max-w-md border border-white/10">
+              <div className="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-white mb-4 animate-bounce">
+                ▶
+              </div>
+              <p className="text-white font-extrabold text-lg mb-2">Platform Demonstration</p>
+              <p className="text-xs text-slate-300 leading-normal">
+                Generates script and video content based on your prompt, automatically streams matching high-quality visuals, and compiles the final output instantly.
+              </p>
+            </div>
           </div>
         </div>
       </section>
