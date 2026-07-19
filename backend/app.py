@@ -94,7 +94,7 @@ def generate_video():
     """
     Main AI generation endpoint.
     Uses AI to generate a script and extracts keywords,
-    then searches Pexels for a matching stock video.
+    then searches stock video or generates AI slideshow images.
     """
     data = request.get_json()
     prompt = data.get("prompt", "").strip()
@@ -113,6 +113,17 @@ def generate_video():
     import urllib.parse
     wrapped_url = f"/api/video_stream?url={urllib.parse.quote(download_url)}" if download_url.startswith("http") else download_url
 
+    # Check visualMatchMode
+    visual_mode = options.get("visualMode", "stock")
+    images = []
+    if visual_mode == "ai_slideshow":
+        # Extract keywords for image generation
+        query_words = [w for w in search_query.split() if len(w) > 3]
+        if not query_words:
+            query_words = ["creative", "concept", "visual", "art"]
+        for idx, qw in enumerate(query_words[:4]):
+            images.append(f"/api/generate_image?prompt={urllib.parse.quote(prompt + ' ' + qw)}&seed={idx + 42}")
+
     # Build result
     title = prompt[:50] + "..." if len(prompt) > 50 else prompt
     result = {
@@ -123,6 +134,8 @@ def generate_video():
         "style": options.get("style", "Cinematic"),
         "status": "completed",
         "download_url": wrapped_url,
+        "visual_mode": visual_mode,
+        "images": images,
         "tags": extract_tags(prompt),
         "views": "0",
     }
@@ -326,6 +339,46 @@ def stream_video():
     except Exception as e:
         print(f"[Streaming] Failed to stream from {video_url}: {e}")
         return send_from_directory(DIST_DIR, "demo.mp4")
+
+
+# ─── Generate Custom Images (Nano Banana / Pollinations) ──────────────────────
+@app.route("/api/generate_image")
+def generate_image():
+    prompt = request.args.get("prompt", "abstract art")
+    seed = request.args.get("seed", "42")
+    
+    # 1. Try Google's Nano Banana Model
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key and genai:
+        try:
+            genai.configure(api_key=gemini_key)
+            model = genai.GenerativeModel("nano-banana-pro-preview")
+            resp = model.generate_content(
+                f"Generate a photorealistic image of: {prompt}",
+                generation_config={"mime_type": "image/jpeg"}
+            )
+            # If the model returned inline parts containing image bytes
+            for part in resp.candidates[0].content.parts:
+                if part.inline_data:
+                    from flask import Response
+                    return Response(part.inline_data.data, mimetype="image/jpeg")
+        except Exception as e:
+            print(f"[Nano Banana] Image generation failed, falling back to Pollinations: {e}")
+            
+    # 2. Fallback: Free Pollinations.ai Image API
+    import urllib.parse
+    encoded_prompt = urllib.parse.quote(prompt)
+    pollinations_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&seed={seed}&nologo=true"
+    try:
+        res = requests.get(pollinations_url, timeout=12)
+        if res.status_code == 200:
+            from flask import Response
+            return Response(res.content, mimetype="image/jpeg")
+    except Exception as e:
+        print(f"[Pollinations] Fallback failed: {e}")
+        
+    # 3. Ultimate Fallback (return small static placeholder logo)
+    return send_from_directory(DIST_DIR, "vite.svg")
 
 
 # ─── Serve React Frontend ────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
@@ -27,6 +28,8 @@ const GEN_STEPS = [
 
 export default function Generator() {
   const { token } = useAuth()
+  const location = useLocation()
+
   const [form, setForm] = useState({
     prompt: '',
     duration: '15 seconds',
@@ -43,6 +46,9 @@ export default function Generator() {
   const [doneSteps, setDoneSteps] = useState([])
   const [result, setResult] = useState(null)
   
+  // Voice state
+  const [isListening, setIsListening] = useState(false)
+
   // Script editor state
   const [editableScript, setEditableScript] = useState('')
 
@@ -52,9 +58,43 @@ export default function Generator() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
   
+  // Auto-populate from landing page voice assistant state if navigated
+  useEffect(() => {
+    if (location.state?.initialPrompt) {
+      setForm(prev => ({ ...prev, prompt: location.state.initialPrompt }))
+    }
+  }, [location.state])
+
   const handleTemplateClick = (promptText) => {
     setForm({ ...form, prompt: promptText })
     toast.success('Template loaded!')
+  }
+
+  // Voice Assistant speech recognizer
+  const handleVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      toast.error('Voice assistant is not supported in this browser. Please use Google Chrome.')
+      return
+    }
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.lang = 'en-US'
+    recognition.interimResults = false
+
+    recognition.onstart = () => {
+      setIsListening(true)
+    }
+    recognition.onend = () => {
+      setIsListening(false)
+    }
+    recognition.onresult = (event) => {
+      const spokenText = event.results[0][0].transcript
+      setForm(prev => ({ ...prev, prompt: prev.prompt ? `${prev.prompt} ${spokenText}` : spokenText }))
+      toast.success('Voice prompt appended!')
+    }
+    recognition.start()
   }
 
   // Slideshow image rotation logic
@@ -97,14 +137,19 @@ export default function Generator() {
       setResult(data)
       setEditableScript(data.script || '')
       
-      // If AI Image Slideshow is selected, pre-generate Pollinations image URLs based on keywords
+      // If slideshow selected, use backend API wrapper to call Nano Banana model (falls back to Pollinations.ai)
       if (form.visualMode === 'ai_slideshow') {
-        const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
-        const queries = queryWords.length >= 2 ? queryWords : ['cute', 'puppy', 'play', 'happy']
-        const urls = queries.map((q, idx) => 
-          `https://image.pollinations.ai/prompt/${encodeURIComponent(form.prompt + ' scene ' + (idx+1) + ', high quality, photorealistic')}?width=1024&height=1024&seed=${idx + 42}`
-        )
-        setSlideshowImages(urls)
+        if (data.images && data.images.length > 0) {
+          setSlideshowImages(data.images)
+        } else {
+          // Local fallback matching
+          const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
+          const queries = queryWords.length >= 2 ? queryWords : ['creative', 'art', 'reels', 'concept']
+          const urls = queries.map((q, idx) => 
+            `/api/generate_image?prompt=${encodeURIComponent(form.prompt + ' ' + q)}&seed=${idx + 42}`
+          )
+          setSlideshowImages(urls)
+        }
       }
     } catch {
       // Use demo result if backend not running
@@ -167,17 +212,34 @@ export default function Generator() {
 
             {/* Input Options Card */}
             <div className="card-glass p-6 flex flex-col gap-5">
-              <div>
+              <div className="relative">
                 <label className="section-label">Describe your video topic</label>
-                <textarea
-                  name="prompt"
-                  value={form.prompt}
-                  onChange={handleChange}
-                  rows={4}
-                  disabled={phase === 'generating'}
-                  placeholder="e.g. A golden retriever puppy playing on the grass..."
-                  className="input-field resize-none text-sm"
-                />
+                <div className="relative">
+                  <textarea
+                    name="prompt"
+                    value={form.prompt}
+                    onChange={handleChange}
+                    rows={4}
+                    disabled={phase === 'generating'}
+                    placeholder="e.g. A golden retriever puppy playing on the grass..."
+                    className="input-field resize-none text-sm pr-12"
+                  />
+                  {/* Voice microphone button */}
+                  <button
+                    onClick={handleVoiceInput}
+                    disabled={phase === 'generating'}
+                    className={`absolute right-3.5 bottom-3.5 w-9 h-9 rounded-xl flex items-center justify-center border transition-all ${
+                      isListening
+                        ? 'bg-brand-glow border-brand-glow text-white shadow-glow animate-pulse'
+                        : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white hover:border-brand/30'
+                    }`}
+                    title="Speak prompt with Voice Assistant"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Visual Mode selector */}
@@ -205,8 +267,8 @@ export default function Generator() {
                         : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
                     }`}
                   >
-                    🎨 Custom AI Slideshow
-                    <span className="text-[10px] font-medium opacity-70">Generate unique AI images (Free)</span>
+                    🎨 Custom AI Slideshow (Nano Banana)
+                    <span className="text-[10px] font-medium opacity-70">Generate unique images with Nano Banana</span>
                   </button>
                 </div>
               </div>
