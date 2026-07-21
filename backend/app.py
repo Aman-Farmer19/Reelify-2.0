@@ -636,6 +636,20 @@ def cleanup_old_media(max_age_seconds: int = 7200):
             pass
 
 
+def get_ffmpeg_binary() -> str:
+    """Find FFmpeg binary in PATH, or fall back to imageio-ffmpeg executable."""
+    if shutil.which("ffmpeg"):
+        return "ffmpeg"
+    try:
+        import imageio_ffmpeg
+        exe = imageio_ffmpeg.get_ffmpeg_exe()
+        if exe and os.path.exists(exe):
+            return exe
+    except Exception:
+        pass
+    return None
+
+
 def generate_srt_file(script: str, duration_secs: int, output_path: str):
     """Convert a script into a timed .srt subtitle file."""
     clean = re.sub(r"\[.*?\]", "", script).strip()
@@ -695,8 +709,13 @@ def run_ffmpeg_pipeline(
     concat_in = "".join(f"[v{i}]" for i in range(n))
     filter_parts.append(f"{concat_in}concat=n={n}:v=1:a=0[out]")
 
+    ffmpeg_bin = get_ffmpeg_binary()
+    if not ffmpeg_bin:
+        print("[FFmpeg] Binary not found in PATH or imageio-ffmpeg")
+        return False
+
     cmd_slide = [
-        "ffmpeg", "-y",
+        ffmpeg_bin, "-y",
         *input_args,
         "-filter_complex", ";".join(filter_parts),
         "-map", "[out]",
@@ -748,7 +767,7 @@ def run_ffmpeg_pipeline(
         )
 
     cmd_final = [
-        "ffmpeg", "-y",
+        ffmpeg_bin, "-y",
         "-i", slideshow_path,
         *audio_inputs,
         *audio_map,
@@ -922,7 +941,7 @@ def get_music():
 @app.route("/api/compile_video", methods=["POST"])
 @jwt_required()
 def compile_video_endpoint():
-    if not shutil.which("ffmpeg"):
+    if not get_ffmpeg_binary():
         return jsonify({"error": "FFmpeg is not installed on this server"}), 500
 
     data         = request.get_json(force=True)
