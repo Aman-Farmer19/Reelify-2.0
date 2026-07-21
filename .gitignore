@@ -34,3 +34,9 @@ logs/
 coverage/
 .coverage
 htmlcov/
+
+# Database & Media
+*.db
+backend/uploads/
+backend/media/
+

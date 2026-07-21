@@ -30,18 +30,9 @@ function AppRoutes() {
         />
       )}
       <Routes>
-        <Route path="/" element={isAuth ? <Generator /> : <LandingPage onAuth={setAuthModal} />} />
+        <Route path="/" element={<LandingPage onAuth={setAuthModal} />} />
+        <Route path="/generate" element={<Generator />} />
         <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Navigate to="/" replace />} />
-        <Route 
-          path="/generate" 
-          element={
-            isAuth ? (
-              <Generator />
-            ) : (
-              <RequireAuthToGenerate onAuth={setAuthModal} />
-            )
-          } 
-        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

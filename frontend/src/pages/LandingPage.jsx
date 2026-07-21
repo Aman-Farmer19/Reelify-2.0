@@ -228,10 +228,11 @@ export default function LandingPage({ onAuth }) {
         </p>
 
         <button 
-          onClick={scrollToSandbox}
-          className="bg-white text-black font-extrabold text-sm px-8 py-4 rounded-full hover:bg-slate-200 transition-all duration-300 shadow-2xl hover:scale-105"
+          onClick={() => navigate('/generate')}
+          className="bg-white text-black font-extrabold text-sm px-8 py-4 rounded-full hover:bg-slate-200 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-2"
         >
-          Create with Reelify
+          <span>Create with Reelify Studio</span>
+          <span className="text-xs">→</span>
         </button>
       </section>
 

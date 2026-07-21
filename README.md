@@ -12,12 +12,15 @@
 ## Features
 
 - **Unified Server** — Frontend and Backend run from a single Flask server on a single port (5000)
-- **AI Script Generation** — Describe your idea; GPT-4o-mini writes an optimised short-form script
+- **AI Script Generation** — Gemini 1.5 Flash / GPT-4o-mini writes an optimised short-form script
 - **Video Generation Flow** — Step-by-step progress UI (script → visuals → voice → render)
 - **Authentication** — JWT-based login and registration
+- **Persistent Storage** — SQLite database; all users and videos survive server restarts
 - **Dashboard** — View and manage all generated videos with stats
 - **Responsive Design** — Mobile-first, works on all screen sizes
 - **Multiple Options** — Duration, format (9:16 / 16:9 / 1:1), style, voice, music, captions
+- **Rate Limiting** — 10 requests/min per IP to protect API quotas
+- **Secure Uploads** — JWT-protected, extension-checked, 16 MB cap
 
 ---
 
@@ -27,7 +30,8 @@
 |-------|-----------|
 | Frontend | React.js 18, Vite, Tailwind CSS |
 | Backend | Python, Flask, Flask-JWT-Extended |
-| AI | OpenAI GPT-4o-mini (script generation) |
+| Database | SQLite (via stdlib `sqlite3`) |
+| AI | Gemini 1.5 Flash (primary), OpenAI GPT-4o-mini (fallback) |
 | State | React Context API |
 | HTTP | Axios, REST APIs |
 | Auth | JWT (JSON Web Tokens) |
@@ -64,9 +68,10 @@ reelify/
 │
 ├── backend/
 │   ├── app.py                # Flask Server (serves React + API routes)
+│   ├── reelify.db            # SQLite database (auto-created on first run)
 │   ├── requirements.txt
-│   ├── .env.example
-│   └── .env
+│   ├── .env.example          # Template — copy to .env and fill in keys
+│   └── .env                  # ⚠️ Never commit this file
 │
 ├── .gitignore
 └── README.md
@@ -79,7 +84,7 @@ reelify/
 ### Prerequisites
 - Node.js 18+
 - Python 3.9+
-- OpenAI API key (optional — app works in demo mode without it)
+- API keys (all optional — app works in demo mode without them)
 
 ---
 
@@ -92,14 +97,27 @@ cd Reelify-2.0/reelify
 
 ---
 
-### 2. Run the App
+### 2. Configure Environment
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `.env` and fill in your keys. At minimum, set a strong `JWT_SECRET`:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+---
+
+### 3. Run the App
 
 #### Option A: One-click launcher (Windows)
-Double-click `start.bat` or run it from terminal:
 ```powershell
 .\start.bat
 ```
-This automatically builds the React frontend and starts the Flask server.
 
 #### Option B: Manual Startup
 
@@ -115,17 +133,17 @@ cd ..
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS/Linux
 pip install -r requirements.txt
-cp .env.example .env            # Add your OpenAI API key to .env if you have one
 python app.py
 ```
 
 ---
 
-### 3. Open in Browser
+### 4. Open in Browser
 
-Go to **[http://localhost:5000](http://localhost:5000)** (both API and React app serve from here).
+Go to **[http://localhost:5000](http://localhost:5000)**
 
 ---
 
@@ -135,39 +153,63 @@ Go to **[http://localhost:5000](http://localhost:5000)** (both API and React app
 |--------|----------|-------------|------|
 | POST | `/api/auth/register` | Create new account | No |
 | POST | `/api/auth/login` | Log in | No |
-| POST | `/api/generate` | Generate AI video | Optional |
-| GET | `/api/videos` | Get user's videos | Yes |
+| POST | `/api/generate` | Generate AI video (rate limited: 10/min) | Optional |
+| GET | `/api/videos` | Get user's videos | ✅ Required |
+| POST | `/api/upload` | Upload custom asset | ✅ Required |
 | GET | `/api/health` | Health check | No |
 
 ---
 
 ## Environment Variables
 
-```env
-# backend/.env
-JWT_SECRET=your-jwt-secret
-OPENAI_API_KEY=sk-your-key-here   # Optional — demo mode works without it
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `JWT_SECRET` | ✅ Production | Long random string for JWT signing |
+| `FLASK_DEBUG` | No | Set `true` for local dev only |
+| `OPENAI_API_KEY` | No | GPT-4o-mini script generation |
+| `GEMINI_API_KEY` | No | Gemini 1.5 Flash (primary AI) |
+| `PEXELS_API_KEY` | No | Stock video search |
+| `PIXABAY_API_KEY` | No | Stock video fallback |
 
 ---
 
-## Deployment (Single Service)
+## Deployment (Render / Railway)
 
-Since the frontend is served statically by the Flask server, you can deploy the entire application as a single Flask web service:
+Since the frontend is served statically by Flask, the entire app deploys as a single service.
 
-1. Push your repository to GitHub.
-2. Link it to **Render**, **Railway**, or **Heroku**.
-3. Build Command: `cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt`
-4. Start Command: `cd backend && gunicorn app:app`
-5. Configure your environment variables in the dashboard.
+### Steps
+
+1. Push your repository to GitHub (**ensure `.env` is in `.gitignore`** ✅)
+2. Create a new **Web Service** on [Render](https://render.com) or [Railway](https://railway.app)
+3. Set the following in the platform's environment variables dashboard:
+
+   | Key | Value |
+   |-----|-------|
+   | `JWT_SECRET` | A 32+ char random string |
+   | `FLASK_DEBUG` | `false` |
+   | `OPENAI_API_KEY` | Your key (optional) |
+   | `GEMINI_API_KEY` | Your key (optional) |
+   | `PEXELS_API_KEY` | Your key (optional) |
+
+4. **Build Command:**
+   ```
+   cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt
+   ```
+
+5. **Start Command:**
+   ```
+   cd backend && gunicorn app:app
+   ```
+
+> **Note:** SQLite `reelify.db` is stored on the server's local disk. On Render's free tier, the disk resets on deploy. For persistent storage across deploys, upgrade to Render's **Persistent Disk** add-on or migrate to PostgreSQL.
 
 ---
 
 ## Built by
 
-**Aman Tiwari** — B.Tech CSE, Kashi Institute of Technology
+**Aman Tiwari** — B.Tech CSE, Kashi Institute of Technology  
 [GitHub](https://github.com/Aman-Farmer19) | [LinkedIn](https://linkedin.com)
 
 ---
 
-*Built with React.js, Flask, Tailwind CSS and Generative AI*
+*Built with React.js, Flask, SQLite, Tailwind CSS and Generative AI*

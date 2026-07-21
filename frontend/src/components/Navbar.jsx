@@ -75,31 +75,15 @@ export default function Navbar({ onAuth }) {
         >
           Contact
         </a>
-        {!isAuth ? (
-          <a 
-            href="/#sandbox-container" 
-            onClick={(e) => {
-              if (location.pathname === '/') {
-                e.preventDefault()
-                document.getElementById('sandbox-container')?.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
-            className="relative group text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300 flex items-center gap-1.5"
-            title="Try Free Generation Sandbox"
-          >
-            <span>Generate</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-brand/20 border border-brand/40 text-brand-light rounded-full transition-transform duration-200 group-hover:scale-105 group-hover:bg-brand/30">
-              Free Demo
-            </span>
-          </a>
-        ) : (
-          <Link 
-            to="/generate" 
-            className={`text-sm font-semibold transition-colors duration-300 ${location.pathname === '/generate' ? 'text-brand-light' : 'text-slate-400 hover:text-white'}`}
-          >
-            Generate
-          </Link>
-        )}
+        <Link 
+          to="/generate" 
+          className={`text-sm font-semibold transition-colors duration-300 flex items-center gap-1.5 ${location.pathname === '/generate' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'}`}
+        >
+          <span>Studio Generator</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 bg-brand/20 border border-brand/40 text-brand-light rounded-full">
+            Full AI
+          </span>
+        </Link>
         {isAuth && (
           <Link 
             to="/dashboard" 

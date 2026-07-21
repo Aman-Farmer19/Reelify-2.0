@@ -8,7 +8,7 @@ import Sidebar from '../components/Sidebar'
 const DURATION_OPTIONS = ['15 seconds', '30 seconds', '60 seconds', '90 seconds']
 const FORMAT_OPTIONS = ['9:16 (Reels/Shorts)', '16:9 (YouTube)', '1:1 (Feed Post)']
 const STYLE_OPTIONS = ['Dynamic', 'Cinematic', 'Minimal', 'Bold', 'Vintage']
-const VOICE_OPTIONS = ['Aria (Female)', 'Marcus (Male)', 'Zara (Female)', 'Leo (Male)', 'No Voice']
+const VOICE_OPTIONS = ['Aria (Female)', 'Marcus (Male)', 'Zara (Female)', 'Leo (Male)', 'British Emma', 'No Voice']
 const MUSIC_OPTIONS = ['Upbeat Electronic', 'Cinematic Epic', 'Lo-Fi Chill', 'Corporate', 'No Music']
 const CAPTION_OPTIONS = ['Animated Bold', 'Clean White', 'Neon Glow', 'None']
 
@@ -20,10 +20,10 @@ const QUICK_TEMPLATES = [
 ]
 
 const GEN_STEPS = [
-  { id: 'script', label: 'Writing AI script' },
-  { id: 'visuals', label: 'Selecting visuals' },
-  { id: 'voice', label: 'Adding voiceover & music' },
-  { id: 'render', label: 'Final render' },
+  { id: 'script', label: 'Writing AI script & storyboard' },
+  { id: 'visuals', label: 'Generating photorealistic scenes' },
+  { id: 'voice', label: 'Synthesizing neural AI voiceover' },
+  { id: 'render', label: 'Fetching background music' },
 ]
 
 export default function Generator() {
@@ -35,10 +35,10 @@ export default function Generator() {
     duration: '15 seconds',
     format: '9:16 (Reels/Shorts)',
     style: 'Cinematic',
-    voice: 'Marcus (Male)',
+    voice: 'Aria (Female)',
     music: 'Upbeat Electronic',
     captions: 'Animated Bold',
-    visualMode: 'stock', // stock | ai_slideshow | upload
+    visualMode: 'ai_slideshow', // stock | ai_slideshow | upload
   })
   const [phase, setPhase] = useState('idle') // idle | generating | done
   const [progress, setProgress] = useState(0)
@@ -53,8 +53,13 @@ export default function Generator() {
   const [uploadedFileUrl, setUploadedFileUrl] = useState('')
   const [uploadedFileName, setUploadedFileName] = useState('')
 
-  // Script editor state
+  // Pipeline extra states
   const [editableScript, setEditableScript] = useState('')
+  const [storyboardScenes, setStoryboardScenes] = useState([])
+  const [generatedVoiceUrl, setGeneratedVoiceUrl] = useState(null)
+  const [generatedMusicUrl, setGeneratedMusicUrl] = useState(null)
+  const [compiledVideoUrl, setCompiledVideoUrl] = useState(null)
+  const [isCompiling, setIsCompiling] = useState(false)
 
   // AI image slideshow states
   const [slideshowImages, setSlideshowImages] = useState([])
@@ -142,65 +147,147 @@ export default function Generator() {
     setDoneSteps([])
     setResult(null)
     setSlideshowImages([])
+    setStoryboardScenes([])
+    setGeneratedVoiceUrl(null)
+    setGeneratedMusicUrl(null)
+    setCompiledVideoUrl(null)
     setCurrentSlideIndex(0)
 
-    // Simulate step-by-step progress
-    const steps = ['script', 'visuals', 'voice', 'render']
-    const pcts = [25, 55, 78, 100]
+    // Step 1: Script & Visuals
+    setActiveStep('script')
+    setProgress(20)
+    let apiData = null
 
-    for (let i = 0; i < steps.length; i++) {
-      setActiveStep(steps[i])
-      setProgress(pcts[i])
-      await new Promise((r) => setTimeout(r, 1000))
-      setDoneSteps((prev) => [...prev, steps[i]])
-    }
-
-    // Call backend API
     try {
       const { data } = await axios.post(
         '/api/generate',
         { prompt: form.prompt, options: { ...form, uploadedUrl: uploadedFileUrl } },
         { headers: { Authorization: `Bearer ${token}` } }
       )
-      
-      // Override output URL if custom Canva upload is active
-      if (form.visualMode === 'upload' && uploadedFileUrl) {
-        data.download_url = uploadedFileUrl
-      }
-
-      setResult(data)
-      setEditableScript(data.script || '')
-      
-      // If slideshow selected, use backend API wrapper to call Nano Banana model (falls back to Pollinations.ai)
-      if (form.visualMode === 'ai_slideshow') {
-        if (data.images && data.images.length > 0) {
-          setSlideshowImages(data.images)
-        } else {
-          // Local fallback matching
-          const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
-          const queries = queryWords.length >= 2 ? queryWords : ['creative', 'art', 'reels', 'concept']
-          const urls = queries.map((q, idx) => 
-            `/api/generate_image?prompt=${encodeURIComponent(form.prompt + ' ' + q)}&seed=${idx + 42}`
-          )
-          setSlideshowImages(urls)
-        }
-      }
-    } catch {
-      // Use demo result if backend not running
+      apiData = data
+    } catch (err) {
       const dummyScript = `Here is a custom script generated for: "${form.prompt}". Optimize your parameters for the perfect post.`
-      setResult({
+      apiData = {
         title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '...' : form.prompt,
         script: dummyScript,
         duration: form.duration,
         format: form.format,
         style: form.style,
         download_url: (form.visualMode === 'upload' && uploadedFileUrl) ? uploadedFileUrl : '/demo.mp4',
-      })
-      setEditableScript(dummyScript)
+      }
     }
 
+    setResult(apiData)
+    setEditableScript(apiData.script || '')
+    setDoneSteps(prev => [...prev, 'script'])
+
+    // Step 2: Storyboard & Scenes
+    setActiveStep('visuals')
+    setProgress(45)
+    let scenesList = []
+
+    try {
+      const sbRes = await axios.post(
+        '/api/generate_storyboard',
+        { script: apiData.script || form.prompt, prompt: form.prompt, num_scenes: 4 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      scenesList = sbRes.data.scenes || []
+      setStoryboardScenes(scenesList)
+      
+      const imageUrls = scenesList.map(s => s.image_url)
+      if (imageUrls.length > 0) {
+        setSlideshowImages(imageUrls)
+      }
+    } catch (e) {
+      console.warn('Storyboard generation fallback', e)
+    }
+
+    if (slideshowImages.length === 0 && (!scenesList || scenesList.length === 0)) {
+      const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
+      const queries = queryWords.length >= 2 ? queryWords : ['creative', 'art', 'reels', 'concept']
+      const urls = queries.map((q, idx) => 
+        `/api/generate_image?prompt=${encodeURIComponent(form.prompt + ' ' + q)}&seed=${idx + 42}`
+      )
+      setSlideshowImages(urls)
+    }
+    setDoneSteps(prev => [...prev, 'visuals'])
+
+    // Step 3: Neural Voice Synthesis (edge-tts)
+    setActiveStep('voice')
+    setProgress(75)
+    if (form.voice !== 'No Voice' && apiData.script) {
+      try {
+        const vRes = await axios.post(
+          '/api/generate_voice',
+          { script: apiData.script, voice: form.voice },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        if (vRes.data.audio_url) {
+          setGeneratedVoiceUrl(vRes.data.audio_url)
+        }
+      } catch (e) {
+        console.warn('Voice synthesis skipped or unavailable:', e)
+      }
+    }
+    setDoneSteps(prev => [...prev, 'voice'])
+
+    // Step 4: Music search
+    setActiveStep('render')
+    setProgress(90)
+    if (form.music !== 'No Music') {
+      try {
+        const moodMap = { 'Upbeat Electronic': 'upbeat', 'Cinematic Epic': 'epic', 'Lo-Fi Chill': 'chill', 'Corporate': 'corporate' }
+        const mRes = await axios.get(`/api/get_music?mood=${moodMap[form.music] || 'positive'}`)
+        if (mRes.data.music_url) {
+          setGeneratedMusicUrl(mRes.data.music_url)
+        }
+      } catch (e) {
+        console.warn('Music fetch skipped:', e)
+      }
+    }
+    setDoneSteps(prev => [...prev, 'render'])
+
+    setProgress(100)
     setActiveStep('')
     setPhase('done')
+    toast.success('Script, Storyboard, AI Voice & Music ready!')
+  }
+
+  // Trigger FFmpeg compilation
+  const handleCompileVideo = async () => {
+    if (!slideshowImages || slideshowImages.length === 0) {
+      toast.error('No scene images available to compile video.')
+      return
+    }
+
+    setIsCompiling(true)
+    const compileToast = toast.loading('FFmpeg is stitching scenes, audio, and captions into final MP4...')
+
+    try {
+      const { data } = await axios.post(
+        '/api/compile_video',
+        {
+          image_urls: slideshowImages,
+          audio_url: generatedVoiceUrl,
+          music_url: generatedMusicUrl,
+          script: editableScript || result?.script || '',
+          duration: form.duration,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      if (data.video_url) {
+        setCompiledVideoUrl(data.video_url)
+        toast.success('Final video compiled successfully with FFmpeg!', { id: compileToast })
+      } else {
+        toast.error('Video compile finished without output file.', { id: compileToast })
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'FFmpeg compile failed. Ensure FFmpeg is installed on server.', { id: compileToast })
+    } finally {
+      setIsCompiling(false)
+    }
   }
 
   const reset = () => {
@@ -211,6 +298,10 @@ export default function Generator() {
     setResult(null)
     setEditableScript('')
     setSlideshowImages([])
+    setStoryboardScenes([])
+    setGeneratedVoiceUrl(null)
+    setGeneratedMusicUrl(null)
+    setCompiledVideoUrl(null)
   }
 
   return (
@@ -220,11 +311,11 @@ export default function Generator() {
       <main className="flex-1 p-6 md:p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
           
-          {/* Left Panel: Settings */}
+          {/* Left Panel: Settings & Pipeline */}
           <div className="flex-1 flex flex-col gap-6">
             <div>
               <h1 className="text-2xl font-extrabold text-white mb-2 tracking-tight">AI Generation Studio</h1>
-              <p className="text-xs text-slate-400">Set your prompt settings and visual preferences. Our AI handles the script, voice, and editing flow.</p>
+              <p className="text-xs text-slate-400">Set your prompt settings and visual preferences. Our AI handles the script, voice, storyboard, and video compilation.</p>
             </div>
 
             {/* Quick Templates */}
@@ -281,6 +372,18 @@ export default function Generator() {
                 <label className="section-label">Visual Match Mode</label>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <button
+                    onClick={() => setForm({ ...form, visualMode: 'ai_slideshow' })}
+                    disabled={phase === 'generating'}
+                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                      form.visualMode === 'ai_slideshow'
+                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🎨 AI Storyboard Images
+                    <span className="text-[9px] font-medium opacity-70">Pollinations / AI scenes</span>
+                  </button>
+                  <button
                     onClick={() => setForm({ ...form, visualMode: 'stock' })}
                     disabled={phase === 'generating'}
                     className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
@@ -290,19 +393,7 @@ export default function Generator() {
                     }`}
                   >
                     🎥 Stock Video Match
-                    <span className="text-[9px] font-medium opacity-70">Search footage</span>
-                  </button>
-                  <button
-                    onClick={() => setForm({ ...form, visualMode: 'ai_slideshow' })}
-                    disabled={phase === 'generating'}
-                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                      form.visualMode === 'ai_slideshow'
-                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
-                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    🎨 AI Slideshow
-                    <span className="text-[9px] font-medium opacity-70">Nano Banana images</span>
+                    <span className="text-[9px] font-medium opacity-70">Pexels / Pixabay</span>
                   </button>
                   <button
                     onClick={() => setForm({ ...form, visualMode: 'upload' })}
@@ -314,7 +405,7 @@ export default function Generator() {
                     }`}
                   >
                     📤 Canva / Local Upload
-                    <span className="text-[9px] font-medium opacity-70">Upload Canva files</span>
+                    <span className="text-[9px] font-medium opacity-70">Upload Canva assets</span>
                   </button>
                 </div>
               </div>
@@ -353,8 +444,8 @@ export default function Generator() {
                   { name: 'duration', label: 'Duration', opts: DURATION_OPTIONS },
                   { name: 'format', label: 'Format', opts: FORMAT_OPTIONS },
                   { name: 'style', label: 'Style', opts: STYLE_OPTIONS },
-                  { name: 'voice', label: 'Voice', opts: VOICE_OPTIONS },
-                  { name: 'music', label: 'Music', opts: MUSIC_OPTIONS },
+                  { name: 'voice', label: 'Voice (edge-tts)', opts: VOICE_OPTIONS },
+                  { name: 'music', label: 'Music (Jamendo)', opts: MUSIC_OPTIONS },
                   { name: 'captions', label: 'Captions', opts: CAPTION_OPTIONS },
                 ].map(({ name, label, opts }) => (
                   <div key={name} className="flex flex-col gap-1.5">
@@ -378,7 +469,7 @@ export default function Generator() {
                   disabled={phase === 'generating' || (form.visualMode === 'upload' && !uploadedFileUrl)}
                   className="btn-primary text-sm px-6 py-3.5 rounded-2xl flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  ✦ Start Generating Video
+                  ✦ Run Full AI Pipeline
                 </button>
                 {phase === 'done' && (
                   <button onClick={reset} className="btn-secondary text-sm px-6 py-3.5 rounded-2xl">
@@ -387,9 +478,64 @@ export default function Generator() {
                 )}
               </div>
             </div>
+
+            {/* Storyboard Scene Breakdown */}
+            {phase === 'done' && storyboardScenes.length > 0 && (
+              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <label className="section-label mb-0">🎬 AI Storyboard Breakdown</label>
+                  <span className="text-[10px] text-brand-light font-bold bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-full">
+                    {storyboardScenes.length} Scenes
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {storyboardScenes.map((sc, idx) => (
+                    <div key={idx} className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-xl flex gap-3 items-center">
+                      <img
+                        src={sc.image_url}
+                        alt={`Scene ${sc.scene}`}
+                        className="w-14 h-20 object-cover rounded-lg bg-surface-1 border border-white/10 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{sc.title || `Scene ${sc.scene}`}</p>
+                        <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{sc.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generated Audio & Voice Preview */}
+            {phase === 'done' && (generatedVoiceUrl || generatedMusicUrl) && (
+              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
+                <label className="section-label">🔊 AI Voice & Background Music Tracks</label>
+                
+                {generatedVoiceUrl && (
+                  <div className="flex flex-col gap-1.5 bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-white">🗣 AI Voiceover ({form.voice})</span>
+                      <span className="text-[9px] text-emerald-400 font-bold uppercase">edge-tts</span>
+                    </div>
+                    <audio controls src={generatedVoiceUrl} className="w-full h-8 mt-1" />
+                  </div>
+                )}
+
+                {generatedMusicUrl && (
+                  <div className="flex flex-col gap-1.5 bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-white">🎵 Background Music ({form.music})</span>
+                      <span className="text-[9px] text-brand-light font-bold uppercase">Jamendo</span>
+                    </div>
+                    <audio controls src={generatedMusicUrl} className="w-full h-8 mt-1" />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Right Panel: Workspace Preview */}
+          {/* Right Panel: Workspace Preview & Compilation */}
           <div className="w-full lg:w-[450px] flex flex-col gap-6">
             
             {/* Real-time Video Render Screen */}
@@ -417,14 +563,22 @@ export default function Generator() {
                       <p className="text-xs font-bold text-white mb-1">
                         {GEN_STEPS.find((s) => s.id === activeStep)?.label || 'Processing...'}
                       </p>
-                      <p className="text-[10px] text-slate-500">Generating script & visual coordinates</p>
+                      <p className="text-[10px] text-slate-500">Executing full AI pipeline</p>
                     </div>
                   </div>
                 )}
 
-                {phase === 'done' && result && (
+                {phase === 'done' && (
                   <div className="w-full h-full relative">
-                    {form.visualMode === 'stock' ? (
+                    {compiledVideoUrl ? (
+                      <video
+                        src={compiledVideoUrl}
+                        controls
+                        autoPlay
+                        loop
+                        className="w-full h-full object-cover"
+                      />
+                    ) : form.visualMode === 'stock' && result?.download_url ? (
                       <video
                         src={result.download_url}
                         controls
@@ -432,7 +586,7 @@ export default function Generator() {
                         loop
                         className="w-full h-full object-cover"
                       />
-                    ) : form.visualMode === 'upload' ? (
+                    ) : form.visualMode === 'upload' && result?.download_url ? (
                       uploadedFileUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
                         <video
                           src={result.download_url}
@@ -453,7 +607,7 @@ export default function Generator() {
                       <div className="w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
                         {slideshowImages.map((url, idx) => (
                           <div
-                            key={url}
+                            key={url + idx}
                             className={`absolute inset-0 transition-opacity duration-1000 ${
                               currentSlideIndex === idx ? 'opacity-100' : 'opacity-0'
                             }`}
@@ -461,7 +615,7 @@ export default function Generator() {
                             <img
                               src={url}
                               alt={`slide-${idx}`}
-                              className="w-full h-full object-cover transform scale-110 animate-pulse"
+                              className="w-full h-full object-cover transform scale-105 animate-pulse"
                               style={{ animationDuration: '4s' }}
                             />
                           </div>
@@ -480,27 +634,37 @@ export default function Generator() {
                       </div>
                     )}
 
-                    {/* Captions overlay */}
-                    {form.captions !== 'None' && (
+                    {/* Captions overlay indicator */}
+                    {form.captions !== 'None' && !compiledVideoUrl && (
                       <div className="absolute bottom-16 left-4 right-4 bg-black/60 backdrop-blur-sm border border-white/5 p-3 rounded-xl text-center text-xs font-bold text-white z-10">
-                        💬 Caption Overlay Preview Active
+                        💬 Captions generated — click Compile to burn into MP4
                       </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {phase === 'done' && result && (
-                <div className="flex gap-2">
-                  <a
-                    href={result.download_url}
-                    download="reelify_video.mp4"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-primary text-xs font-bold px-4 py-3 rounded-xl flex-1 text-center"
+              {phase === 'done' && (
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleCompileVideo}
+                    disabled={isCompiling}
+                    className="btn-primary text-xs font-bold py-3 rounded-xl w-full flex items-center justify-center gap-2"
                   >
-                    ⬇ Download Video
-                  </a>
+                    {isCompiling ? '⚡ FFmpeg Compiling MP4...' : '🎬 Compile Final MP4 (FFmpeg)'}
+                  </button>
+
+                  {(compiledVideoUrl || result?.download_url) && (
+                    <a
+                      href={compiledVideoUrl || result.download_url}
+                      download="reelify_final.mp4"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold py-2.5 rounded-xl text-center transition-all"
+                    >
+                      ⬇ Download MP4 Video
+                    </a>
+                  )}
                 </div>
               )}
             </div>
