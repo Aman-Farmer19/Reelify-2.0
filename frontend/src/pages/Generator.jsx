@@ -168,8 +168,24 @@ export default function Generator() {
         data.download_url = uploadedFileUrl
       }
 
-      setResult(data)
-      setEditableScript(data.script || '')
+      const finalResult = data
+      setResult(finalResult)
+      setEditableScript(finalResult.script || '')
+
+      // Save to user's generated videos history
+      const existingHistory = JSON.parse(localStorage.getItem('reelify_user_videos') || '[]')
+      const newVideoEntry = {
+        id: Date.now().toString(),
+        title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '...' : form.prompt,
+        duration: form.duration,
+        format: form.format,
+        style: form.style,
+        download_url: finalResult.download_url || '/demo.mp4',
+        created_at: new Date().toISOString().split('T')[0],
+        tags: form.prompt.split(' ').filter(w => w.length > 3).slice(0, 3),
+        views: '1',
+      }
+      localStorage.setItem('reelify_user_videos', JSON.stringify([newVideoEntry, ...existingHistory]))
       
       // If slideshow selected, use backend API wrapper to call Nano Banana model (falls back to Pollinations.ai)
       if (form.visualMode === 'ai_slideshow') {
@@ -188,15 +204,31 @@ export default function Generator() {
     } catch {
       // Use demo result if backend not running
       const dummyScript = `Here is a custom script generated for: "${form.prompt}". Optimize your parameters for the perfect post.`
-      setResult({
+      const dummyResult = {
         title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '...' : form.prompt,
         script: dummyScript,
         duration: form.duration,
         format: form.format,
         style: form.style,
         download_url: (form.visualMode === 'upload' && uploadedFileUrl) ? uploadedFileUrl : '/demo.mp4',
-      })
+      }
+      setResult(dummyResult)
       setEditableScript(dummyScript)
+
+      // Save dummy result to user's generated videos history
+      const existingHistory = JSON.parse(localStorage.getItem('reelify_user_videos') || '[]')
+      const newVideoEntry = {
+        id: Date.now().toString(),
+        title: form.prompt.length > 50 ? form.prompt.substring(0, 50) + '...' : form.prompt,
+        duration: form.duration,
+        format: form.format,
+        style: form.style,
+        download_url: dummyResult.download_url,
+        created_at: new Date().toISOString().split('T')[0],
+        tags: form.prompt.split(' ').filter(w => w.length > 3).slice(0, 3),
+        views: '1',
+      }
+      localStorage.setItem('reelify_user_videos', JSON.stringify([newVideoEntry, ...existingHistory]))
     }
 
     setActiveStep('')

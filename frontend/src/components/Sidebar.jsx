@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 
 const links = [
   { 
-    to: '/dashboard', 
+    to: '/dashboard?tab=overview', 
+    tab: 'overview',
     label: 'Dashboard',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +14,8 @@ const links = [
   },
   { 
     to: '/generate', 
-    label: 'Generate',
+    tab: 'generate',
+    label: 'AI Studio',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -21,7 +23,8 @@ const links = [
     )
   },
   { 
-    to: '/dashboard', 
+    to: '/dashboard?tab=overview', 
+    tab: 'overview',
     label: 'My Videos',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -31,7 +34,8 @@ const links = [
     )
   },
   { 
-    to: '/dashboard', 
+    to: '/dashboard?tab=analytics', 
+    tab: 'analytics',
     label: 'Analytics',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,7 +47,8 @@ const links = [
 
 const settingsLinks = [
   { 
-    to: '/dashboard', 
+    to: '/dashboard?tab=preferences', 
+    tab: 'preferences',
     label: 'Preferences',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,7 +58,8 @@ const settingsLinks = [
     )
   },
   { 
-    to: '/dashboard', 
+    to: '/dashboard?tab=profile', 
+    tab: 'profile',
     label: 'Profile',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,11 +70,15 @@ const settingsLinks = [
 ]
 
 export default function Sidebar() {
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const currentTab = new URLSearchParams(location.search).get('tab') || 'overview'
 
-  const NavItem = ({ to, icon, label }) => {
+  const NavItem = ({ to, tab, icon, label }) => {
     // Determine active menu item
-    const active = pathname === to && label !== 'My Videos' && label !== 'Analytics' && label !== 'Profile' && label !== 'Preferences'
+    const active = location.pathname === '/generate' 
+      ? tab === 'generate'
+      : (location.pathname === '/dashboard' && (currentTab === tab || (tab === 'overview' && !currentTab)))
+
     return (
       <Link
         to={to}
