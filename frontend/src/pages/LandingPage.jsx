@@ -142,6 +142,9 @@ export default function LandingPage({ onAuth }) {
   const [sandboxPhase, setSandboxPhase] = useState('idle') // idle | rendering | done
   const [sandboxProgress, setSandboxProgress] = useState(0)
   const [sandboxResultUrl, setSandboxResultUrl] = useState('')
+  const [usedTrialCount, setUsedTrialCount] = useState(() => {
+    return parseInt(localStorage.getItem('sandbox_generations_count') || '0', 10)
+  })
 
   // Scroll to sandbox
   const scrollToSandbox = () => {
@@ -151,13 +154,12 @@ export default function LandingPage({ onAuth }) {
     }
   }
 
-  // Handle Free Sandbox Trial (limited to once)
+  // Handle Free Sandbox Trial (up to 3 times)
   const generateSandboxDemo = async () => {
-    // Check if user has already used their free run
-    const hasUsedTrial = localStorage.getItem('has_generated_free')
+    const currentCount = parseInt(localStorage.getItem('sandbox_generations_count') || '0', 10)
     
-    if (hasUsedTrial) {
-      toast.error('You have already used your free generation! Please sign up to continue.')
+    if (currentCount >= 3) {
+      toast.error('You have reached your limit of 3 free demo generations! Please sign up to access the full studio.')
       onAuth('signup')
       return
     }
@@ -184,17 +186,17 @@ export default function LandingPage({ onAuth }) {
 
     // Set the result URL based on selection
     if (generationType === 'video') {
-      // Wrap remote video in proxy to guarantee playback
       setSandboxResultUrl(`/api/video_stream?url=${encodeURIComponent(selectedTopic.videoUrl)}`)
     } else {
-      // Call our Google image proxy route
-      setSandboxResultUrl(`/api/generate_image?prompt=${encodeURIComponent(selectedTopic.prompt)}&seed=42`)
+      setSandboxResultUrl(`/api/generate_image?prompt=${encodeURIComponent(selectedTopic.prompt)}&seed=${42 + currentCount}`)
     }
 
-    // Flag the local storage so they can only try once
-    localStorage.setItem('has_generated_free', 'true')
+    // Increment trial count up to 3
+    const newCount = currentCount + 1
+    localStorage.setItem('sandbox_generations_count', newCount.toString())
+    setUsedTrialCount(newCount)
     setSandboxPhase('done')
-    toast.success('Cinematic demo generated successfully!')
+    toast.success(`Demo generated! (${newCount}/3 free generations used)`)
   }
 
   return (
@@ -233,19 +235,19 @@ export default function LandingPage({ onAuth }) {
         </button>
       </section>
 
-      {/* ─── INTERACTIVE SANDBOX: TRY WITH REELIFY ONCE ─── */}
+      {/* ─── INTERACTIVE SANDBOX: TRY WITH REELIFY ─── */}
       <section id="sandbox-container" className="px-6 mb-28 max-w-4xl mx-auto scroll-mt-24">
         <div className="card-glass p-8 md:p-10 border-brand/20 relative shadow-glow-strong">
           
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4 shadow-glow">
-              ⚡ Try with Reelify Once
+              ⚡ Try Reelify Demo ({Math.max(0, 3 - usedTrialCount)} / 3 Free Generations Left)
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
               Free Generation Sandbox
             </h2>
             <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              Select one of the 10 cinematic preset prompts below. Get one free photorealistic image or video generation before signing up.
+              Select one of the 10 cinematic preset prompts below. Get up to 3 free photorealistic image or video generations before signing up.
             </p>
           </div>
 
@@ -304,11 +306,22 @@ export default function LandingPage({ onAuth }) {
 
               {/* Action Button */}
               <button
-                onClick={generateSandboxDemo}
+                onClick={() => {
+                  if (usedTrialCount >= 3) {
+                    toast.error('Free trial limit reached (3/3). Please sign up to continue generating!')
+                    onAuth('signup')
+                  } else {
+                    generateSandboxDemo()
+                  }
+                }}
                 disabled={sandboxPhase === 'rendering'}
                 className="btn-primary text-xs font-bold py-4 rounded-xl shadow-glow w-full flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {sandboxPhase === 'rendering' ? 'Rendering Free Trial...' : 'Generate Free Demo'}
+                {sandboxPhase === 'rendering' 
+                  ? 'Rendering Free Trial...' 
+                  : usedTrialCount >= 3 
+                    ? '🔒 3/3 Free Limit Reached — Sign Up to Unlock Studio' 
+                    : `Generate Free Demo (${3 - usedTrialCount} Left)`}
               </button>
 
               <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3.5 text-center flex items-center justify-between gap-3">
