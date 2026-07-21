@@ -8,6 +8,13 @@ import Generator from './pages/Generator'
 import AuthModal from './components/AuthModal'
 import { useState } from 'react'
 
+function RequireAuthToGenerate({ onAuth }) {
+  React.useEffect(() => {
+    onAuth('signup')
+  }, [onAuth])
+  return <Navigate to="/" replace />
+}
+
 function AppRoutes() {
   const { isAuth } = useAuth()
   const [authModal, setAuthModal] = useState(null)
@@ -24,9 +31,18 @@ function AppRoutes() {
       )}
       <Routes>
         <Route path="/" element={isAuth ? <Generator /> : <LandingPage onAuth={setAuthModal} />} />
-        <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Navigate to="/" />} />
-        <Route path="/generate" element={<Generator />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Navigate to="/" replace />} />
+        <Route 
+          path="/generate" 
+          element={
+            isAuth ? (
+              <Generator />
+            ) : (
+              <RequireAuthToGenerate onAuth={setAuthModal} />
+            )
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   )

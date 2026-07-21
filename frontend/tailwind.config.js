@@ -11,11 +11,11 @@ export default {
           light: '#c084fc',
         },
         surface: {
-          0: '#020208', // Deepest background
-          1: '#070714', // Panels
-          2: '#0d0d22', // Sub-panels
-          3: '#141432', // Cards
-          4: '#1a1a3f', // Hover active cards
+          0: '#0c0420', // Deepest background — visible dark purple
+          1: '#15082e', // Panels — rich violet-indigo
+          2: '#1a0535', // Sub-panels — deep purple
+          3: '#221248', // Cards — muted vivid purple
+          4: '#2a1858', // Hover active cards — lifted purple
         },
         border: 'rgba(255, 255, 255, 0.07)',
       },

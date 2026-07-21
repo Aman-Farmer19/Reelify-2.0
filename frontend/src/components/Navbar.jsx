@@ -27,12 +27,79 @@ export default function Navbar({ onAuth }) {
         >
           Home
         </Link>
-        <Link 
-          to="/generate" 
-          className={`text-sm font-semibold transition-colors duration-300 ${location.pathname === '/generate' ? 'text-brand-light' : 'text-slate-400 hover:text-white'}`}
+        <a 
+          href="/#features" 
+          onClick={(e) => {
+            if (location.pathname === '/') {
+              e.preventDefault()
+              document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+          className="text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300"
         >
-          Generate
-        </Link>
+          Features
+        </a>
+        <a 
+          href="/#pricing" 
+          onClick={(e) => {
+            if (location.pathname === '/') {
+              e.preventDefault()
+              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+          className="text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300"
+        >
+          Pricing
+        </a>
+        <a 
+          href="/#about" 
+          onClick={(e) => {
+            if (location.pathname === '/') {
+              e.preventDefault()
+              document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+          className="text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300"
+        >
+          About
+        </a>
+        <a 
+          href="/#contact" 
+          onClick={(e) => {
+            if (location.pathname === '/') {
+              e.preventDefault()
+              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+            }
+          }}
+          className="text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300"
+        >
+          Contact
+        </a>
+        {!isAuth ? (
+          <a 
+            href="/#sandbox-container" 
+            onClick={(e) => {
+              if (location.pathname === '/') {
+                e.preventDefault()
+                document.getElementById('sandbox-container')?.scrollIntoView({ behavior: 'smooth' })
+              }
+            }}
+            className="relative group text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300 flex items-center gap-1.5"
+            title="Try Free Generation Sandbox"
+          >
+            <span>Generate</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.2 bg-brand/20 border border-brand/40 text-brand-light rounded-full transition-transform duration-200 group-hover:scale-105 group-hover:bg-brand/30">
+              Free Demo
+            </span>
+          </a>
+        ) : (
+          <Link 
+            to="/generate" 
+            className={`text-sm font-semibold transition-colors duration-300 ${location.pathname === '/generate' ? 'text-brand-light' : 'text-slate-400 hover:text-white'}`}
+          >
+            Generate
+          </Link>
+        )}
         {isAuth && (
           <Link 
             to="/dashboard" 

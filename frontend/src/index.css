@@ -8,8 +8,12 @@
   body {
     @apply bg-surface-0 text-slate-100 font-sans antialiased selection:bg-brand/30 selection:text-brand-light;
     background-image: 
-      radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(217, 70, 239, 0.05) 0%, transparent 40%);
+      radial-gradient(ellipse at 15% 10%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(217, 70, 239, 0.20) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 50%, rgba(109, 40, 217, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(192, 132, 252, 0.22) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(139, 92, 246, 0.25) 0%, transparent 45%),
+      linear-gradient(180deg, #1a0535 0%, #15082e 40%, #0c0420 100%);
     background-attachment: fixed;
   }
 
@@ -55,8 +59,8 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #020208; }
-::-webkit-scrollbar-thumb { background: #141432; border-radius: 4px; border: 2px solid #020208; }
+::-webkit-scrollbar-track { background: #0a0118; }
+::-webkit-scrollbar-thumb { background: #1a1040; border-radius: 4px; border: 2px solid #0a0118; }
 ::-webkit-scrollbar-thumb:hover { background: #8b5cf6; }
 
 /* Gradient text */

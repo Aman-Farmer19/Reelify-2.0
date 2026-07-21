@@ -213,7 +213,7 @@ export default function LandingPage({ onAuth }) {
       </div>
       
       {/* Background radial overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-surface-0/60 via-surface-0/80 to-surface-0 -z-10 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-0/30 via-surface-0/60 to-surface-0 -z-10 pointer-events-none"></div>
 
       {/* ─── HERO BRANDING HEADER (Google Flow Layout) ─── */}
       <section className="relative text-center px-6 pt-32 pb-20 max-w-4xl mx-auto flex flex-col items-center">
@@ -310,6 +310,16 @@ export default function LandingPage({ onAuth }) {
               >
                 {sandboxPhase === 'rendering' ? 'Rendering Free Trial...' : 'Generate Free Demo'}
               </button>
+
+              <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3.5 text-center flex items-center justify-between gap-3">
+                <span className="text-[11px] text-slate-400">Want to generate custom videos with your own prompts?</span>
+                <button
+                  onClick={() => onAuth('signup')}
+                  className="text-[11px] font-bold text-brand-light hover:underline whitespace-nowrap"
+                >
+                  Sign up for Full Studio →
+                </button>
+              </div>
             </div>
 
             {/* Right: Render Preview Screen */}
@@ -357,6 +367,21 @@ export default function LandingPage({ onAuth }) {
               </div>
             </div>
           </div>
+
+          {sandboxPhase === 'done' && (
+            <div className="mt-8 p-4 rounded-2xl bg-gradient-to-r from-brand/20 via-brand-glow/20 to-brand/20 border border-brand/40 text-center flex flex-col sm:flex-row items-center justify-between gap-4 shadow-glow">
+              <div className="text-left">
+                <p className="text-sm font-extrabold text-white">✨ Ready for Original & Custom Video Generation?</p>
+                <p className="text-xs text-slate-300">Sign up free to access the full Reelify Studio, script editor & high-res exports.</p>
+              </div>
+              <button
+                onClick={() => onAuth('signup')}
+                className="bg-white text-black text-xs font-black px-6 py-3 rounded-xl hover:bg-slate-200 transition-all whitespace-nowrap shadow-lg"
+              >
+                Sign Up for Real Studio →
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -380,7 +405,7 @@ export default function LandingPage({ onAuth }) {
       </section>
 
       {/* ─── DYNAMIC FEATURES GRID ─── */}
-      <section className="px-6 max-w-5xl mx-auto">
+      <section id="features" className="px-6 max-w-5xl mx-auto scroll-mt-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-white mb-3">Everything you need to go viral</h2>
           <p className="text-slate-400 text-sm max-w-md mx-auto">Zero editing skills required. Just describe your idea, choose your style, and let AI render the rest.</p>
@@ -398,6 +423,121 @@ export default function LandingPage({ onAuth }) {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ─── PRICING SECTION ─── */}
+      <section id="pricing" className="px-6 mt-28 max-w-5xl mx-auto scroll-mt-24">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4">
+            💎 Pricing
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-3">Simple, transparent pricing</h2>
+          <p className="text-slate-400 text-sm max-w-md mx-auto">Start free, upgrade when you're ready. No hidden fees.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Free Tier */}
+          <div className="card-glass p-8 border-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+            <h3 className="text-lg font-bold text-white mb-2">Free</h3>
+            <p className="text-3xl font-black text-white mb-1">$0<span className="text-sm font-medium text-slate-500">/mo</span></p>
+            <p className="text-xs text-slate-400 mb-6">Perfect to get started</p>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> 1 free generation</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> 10 preset templates</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> Standard quality</li>
+              <li className="flex items-center gap-2 text-xs text-slate-500"><span className="text-slate-600">✗</span> No voice assistant</li>
+            </ul>
+            <button onClick={() => onAuth('signup')} className="btn-secondary w-full py-3 text-xs font-bold">Get Started</button>
+          </div>
+
+          {/* Pro Tier */}
+          <div className="card-glass p-8 border-brand/30 relative shadow-glow-strong">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand to-brand-glow text-white text-[10px] font-bold px-4 py-1 rounded-full">
+              MOST POPULAR
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Pro</h3>
+            <p className="text-3xl font-black text-white mb-1">$19<span className="text-sm font-medium text-slate-500">/mo</span></p>
+            <p className="text-xs text-slate-400 mb-6">For creators & marketers</p>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> 100 generations/mo</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> HD quality output</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> Voice assistant</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> Custom templates</li>
+            </ul>
+            <button onClick={() => onAuth('signup')} className="btn-primary w-full py-3 text-xs font-bold">Upgrade to Pro</button>
+          </div>
+
+          {/* Enterprise Tier */}
+          <div className="card-glass p-8 border-white/[0.06] hover:border-white/[0.12] transition-all duration-300">
+            <h3 className="text-lg font-bold text-white mb-2">Enterprise</h3>
+            <p className="text-3xl font-black text-white mb-1">$49<span className="text-sm font-medium text-slate-500">/mo</span></p>
+            <p className="text-xs text-slate-400 mb-6">For teams & agencies</p>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> Unlimited generations</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> 4K cinematic quality</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> Priority rendering</li>
+              <li className="flex items-center gap-2 text-xs text-slate-300"><span className="text-brand-light">✓</span> API access & support</li>
+            </ul>
+            <button onClick={() => onAuth('signup')} className="btn-secondary w-full py-3 text-xs font-bold">Contact Sales</button>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── ABOUT SECTION ─── */}
+      <section id="about" className="px-6 mt-28 max-w-4xl mx-auto scroll-mt-24">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4">
+            🎬 About Reelify
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-4">Built for the next generation of creators</h2>
+          <p className="text-slate-400 text-sm max-w-2xl mx-auto leading-relaxed">
+            Reelify is an AI-powered creative platform designed to transform the way content is produced. 
+            From scriptwriting to cinematic rendering, our engine automates every step of short-form video creation — 
+            so you can focus on ideas, not editing software.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div className="card-glass p-6">
+            <p className="text-3xl font-black text-brand-light mb-2">10K+</p>
+            <p className="text-xs text-slate-400 font-semibold">Videos Generated</p>
+          </div>
+          <div className="card-glass p-6">
+            <p className="text-3xl font-black text-brand-light mb-2">50+</p>
+            <p className="text-xs text-slate-400 font-semibold">AI Models Integrated</p>
+          </div>
+          <div className="card-glass p-6">
+            <p className="text-3xl font-black text-brand-light mb-2">99.9%</p>
+            <p className="text-xs text-slate-400 font-semibold">Uptime Guaranteed</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── CONTACT SECTION ─── */}
+      <section id="contact" className="px-6 mt-28 mb-12 max-w-2xl mx-auto scroll-mt-24">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4">
+            ✉️ Contact
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-3">Get in touch</h2>
+          <p className="text-slate-400 text-sm max-w-md mx-auto">Have questions, feedback, or partnership ideas? Drop us a message.</p>
+        </div>
+        <div className="card-glass p-8">
+          <form onSubmit={(e) => { e.preventDefault(); toast.success('Message sent! We\'ll get back to you soon.') }} className="space-y-4">
+            <div>
+              <label className="section-label">Your Name</label>
+              <input type="text" placeholder="ABC" required className="input-field" />
+            </div>
+            <div>
+              <label className="section-label">Email</label>
+              <input type="email" placeholder="you@example.com" required className="input-field" />
+            </div>
+            <div>
+              <label className="section-label">Message</label>
+              <textarea placeholder="Tell us what you're thinking..." rows={4} required className="input-field resize-none" />
+            </div>
+            <button type="submit" className="btn-primary w-full py-3 text-sm font-bold">Send Message</button>
+          </form>
         </div>
       </section>
     </main>

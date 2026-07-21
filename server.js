@@ -51,6 +51,7 @@ function startBackendServer() {
             const backend = spawn('python', ['app.py', '--port', String(BACKEND_PORT)], {
                 cwd: backendDir,
                 stdio: ['inherit', 'inherit', 'inherit'],
+                shell: true,
             });
 
             backend.on('error', (error) => {
@@ -77,6 +78,7 @@ function startFrontendServer() {
             const npm = spawn('npm', ['install'], {
                 cwd: frontendDir,
                 stdio: ['inherit', 'inherit', 'inherit'],
+                shell: true,
             });
 
             npm.on('close', (code) => {
@@ -91,6 +93,7 @@ function startFrontendServer() {
                 frontend = spawn('npm', ['run', 'dev'], {
                     cwd: frontendDir,
                     stdio: ['inherit', 'inherit', 'inherit'],
+                    shell: true,
                 });
 
                 frontend.on('error', (error) => {
@@ -106,6 +109,7 @@ function startFrontendServer() {
             frontend = spawn('npm', ['run', 'dev'], {
                 cwd: frontendDir,
                 stdio: ['inherit', 'inherit', 'inherit'],
+                shell: true,
             });
 
             frontend.on('error', (error) => {
