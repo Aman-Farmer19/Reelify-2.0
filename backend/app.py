@@ -492,18 +492,25 @@ def generate_video_with_fal(prompt: str, query: str) -> str:
         except Exception as e:
             print(f"[fal.ai] Video generation failed, falling back to stock: {e}")
 
-    # ─── 2. Pexels stock video ────────────────────────────────────────────────
+    # ─── 2. Pexels stock video (with orientation filter) ─────────────────────────
     query_clean = query.strip().lower().replace('"', "").replace("'", "")
 
     pexels_key = os.getenv("PEXELS_API_KEY")
     if pexels_key:
         headers = {"Authorization": pexels_key}
-        url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query_clean)}&per_page=3&size=medium"
+        url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query_clean)}&per_page=5&orientation=portrait"
         try:
             res = requests.get(url, headers=headers, timeout=8)
             if res.status_code == 200:
                 data = res.json()
                 videos = data.get("videos", [])
+                if not videos:
+                    # Retry without portrait constraint if no portrait results
+                    fallback_url = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query_clean)}&per_page=5"
+                    res = requests.get(fallback_url, headers=headers, timeout=8)
+                    if res.status_code == 200:
+                        videos = res.json().get("videos", [])
+
                 if videos:
                     video_files = videos[0].get("video_files", [])
                     for vf in video_files:
@@ -978,13 +985,38 @@ def generate_storyboard_endpoint():
             for i in range(num_scenes)
         ]
 
-    # Attach Pollinations image URL to each scene
-    for s in scenes:
-        img_p = s.get("image_prompt", f"{prompt} scene {s.get('scene', 1)}")
-        s["image_url"] = (
-            f"/api/generate_image?prompt={urllib.parse.quote(img_p)}"
-            f"&seed={s.get('scene', 1) * 17}&width=720&height=1280"
-        )
+    # Attach image or Pexels video details to each scene
+    visual_mode = data.get("visual_mode", "ai_slideshow")
+
+    for idx, s in enumerate(scenes):
+        img_p = s.get("image_prompt", f"{prompt} scene {s.get('scene', idx + 1)}")
+        
+        if visual_mode == "stock" and os.getenv("PEXELS_API_KEY"):
+            # Fetch Pexels cover image and video for stock mode
+            headers = {"Authorization": os.getenv("PEXELS_API_KEY")}
+            q_clean = urllib.parse.quote(img_p[:40])
+            p_url   = f"https://api.pexels.com/videos/search?query={q_clean}&per_page=3&orientation=portrait"
+            try:
+                res = requests.get(p_url, headers=headers, timeout=5)
+                if res.status_code == 200:
+                    vids = res.json().get("videos", [])
+                    if vids:
+                        v = vids[0]
+                        s["image_url"] = v.get("image") or f"https://images.pexels.com/videos/{v.get('id')}/pictures/preview-0.jpg"
+                        files = v.get("video_files", [])
+                        for vf in files:
+                            if vf.get("file_type") == "video/mp4":
+                                s["video_url"] = vf.get("link")
+                                break
+            except Exception as e:
+                print(f"[Pexels Scene] Failed for '{img_p[:20]}': {e}")
+
+        # Fallback AI Storyboard Image if no stock image was set
+        if "image_url" not in s or not s["image_url"]:
+            s["image_url"] = (
+                f"/api/generate_image?prompt={urllib.parse.quote(img_p)}"
+                f"&seed={s.get('scene', idx + 1) * 17}&width=720&height=1280"
+            )
 
     return jsonify({"scenes": scenes}), 200
 

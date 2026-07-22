@@ -239,7 +239,7 @@ export default function Generator() {
     try {
       const sbRes = await axios.post(
         '/api/generate_storyboard',
-        { script: apiData.script || form.prompt, prompt: form.prompt, num_scenes: 4 },
+        { script: apiData.script || form.prompt, prompt: form.prompt, num_scenes: 4, visual_mode: form.visualMode },
         getAuthHeader()
       )
       scenesList = sbRes.data.scenes || []
