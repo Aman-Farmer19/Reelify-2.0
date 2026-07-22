@@ -569,11 +569,11 @@ def generate_script_with_ai(prompt: str, options: dict) -> tuple:
     words = [w for w in prompt.split() if w.isalnum()]
     default_query = " ".join(words[:2]) if words else "coding"
 
-    # Step 1: Try Gemini — auto-try available model names
+    # Step 1: Try Gemini — auto-try available model names (featuring gemini-3.6-flash & gemini-3.5-flash-lite)
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key and genai:
         genai.configure(api_key=gemini_key)
-        for model_name in ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]:
+        for model_name in ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]:
             try:
                 model = genai.GenerativeModel(
                     model_name=model_name,
@@ -581,6 +581,7 @@ def generate_script_with_ai(prompt: str, options: dict) -> tuple:
                 )
                 resp = model.generate_content(f"Write a script about: {prompt}")
                 if resp and resp.text:
+                    print(f"[Gemini] Successfully generated script using model: {model_name}")
                     return parse_ai_json(resp.text, default_query)
             except Exception as e:
                 print(f"[Gemini {model_name}] Generation failed: {e}")
@@ -942,18 +943,22 @@ def generate_storyboard_endpoint():
     scenes = []
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key and genai:
-        try:
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=system_prompt)
-            resp  = model.generate_content(f"Script:\n{script}\n\nVideo topic: {prompt}")
-            text  = resp.text.strip()
-            if "```" in text:
-                text = text.split("```")[1].lstrip("json").strip()
+        genai.configure(api_key=gemini_key)
+        for model_name in ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
+            try:
+                model = genai.GenerativeModel(model_name=model_name, system_instruction=system_prompt)
+                resp  = model.generate_content(f"Script:\n{script}\n\nVideo topic: {prompt}")
+                text  = resp.text.strip()
                 if "```" in text:
-                    text = text.split("```")[0].strip()
-            scenes = json.loads(text)
-        except Exception as e:
-            print(f"[Storyboard] Gemini failed: {e}")
+                    text = text.split("```")[1].lstrip("json").strip()
+                    if "```" in text:
+                        text = text.split("```")[0].strip()
+                scenes = json.loads(text)
+                if scenes:
+                    print(f"[Storyboard] Successfully generated scenes using model: {model_name}")
+                    break
+            except Exception as e:
+                print(f"[Storyboard {model_name}] Gemini failed: {e}")
 
     if not scenes:
         # Fallback: split script into N roughly equal chunks
