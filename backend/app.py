@@ -569,24 +569,28 @@ def generate_script_with_ai(prompt: str, options: dict) -> tuple:
     words = [w for w in prompt.split() if w.isalnum()]
     default_query = " ".join(words[:2]) if words else "coding"
 
-    # Step 1: Try Gemini — FIX 3: corrected model name
+    # Step 1: Try Gemini — auto-try available model names
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key and genai:
-        try:
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",   # was: gemini-3.5-flash (does not exist)
-                system_instruction=system_prompt
-            )
-            resp = model.generate_content(f"Write a script about: {prompt}")
-            return parse_ai_json(resp.text, default_query)
-        except Exception as e:
-            print(f"[Gemini] Generation failed, trying OpenAI failover: {e}")
+        genai.configure(api_key=gemini_key)
+        for model_name in ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"]:
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_name,
+                    system_instruction=system_prompt
+                )
+                resp = model.generate_content(f"Write a script about: {prompt}")
+                if resp and resp.text:
+                    return parse_ai_json(resp.text, default_query)
+            except Exception as e:
+                print(f"[Gemini {model_name}] Generation failed: {e}")
 
     # Step 2: Try OpenAI
-    if openai.api_key:
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
         try:
-            resp = openai.chat.completions.create(
+            client = openai.OpenAI(api_key=openai_key)
+            resp = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -679,33 +683,35 @@ def generate_image():
             # Minimal 1x1 JPEG byte stream fallback
             return b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\x7f\x00\xd9'
 
-    # 1. Try Gemini image generation
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key and genai:
-        try:
-            genai.configure(api_key=gemini_key)
-            model = genai.GenerativeModel("imagegeneration@002")
-            resp  = model.generate_content(f"Generate a photorealistic image of: {prompt}")
-            for part in resp.candidates[0].content.parts:
-                if part.inline_data:
-                    return Response(part.inline_data.data, mimetype="image/jpeg")
-        except Exception as e:
-            print(f"[Gemini Image] Failed, falling back to Pollinations: {e}")
-
-    # 2. Fallback: Pollinations.ai (free, no key needed)
+    # 1. High-speed Pollinations with 4s timeout
     encoded_prompt   = urllib.parse.quote(prompt)
     pollinations_url = (
         f"https://image.pollinations.ai/prompt/{encoded_prompt}"
         f"?width=720&height=1280&seed={seed}&nologo=true"
     )
     try:
-        res = requests.get(pollinations_url, timeout=12)
+        res = requests.get(pollinations_url, timeout=4)
         if res.status_code == 200 and res.content.startswith(b"\xff\xd8"):  # Valid JPEG header
             return Response(res.content, mimetype="image/jpeg")
         elif res.status_code == 200 and b"PNG" in res.content[:10]:
             return Response(res.content, mimetype="image/png")
     except Exception as e:
-        print(f"[Pollinations] Fallback failed: {e}")
+        print(f"[Pollinations] Timeout/Fail (4s): {e}")
+
+    # 2. Fast Unsplash / Picsum CDN Failover (instant)
+    unsplash_urls = [
+        "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=720&h=1280&q=80",
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=720&h=1280&q=80",
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=720&h=1280&q=80",
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=720&h=1280&q=80",
+    ]
+    try:
+        seed_idx = int(seed) % len(unsplash_urls) if str(seed).isdigit() else 0
+        u_resp = requests.get(unsplash_urls[seed_idx], timeout=5)
+        if u_resp.status_code == 200:
+            return Response(u_resp.content, mimetype="image/jpeg")
+    except Exception as e:
+        print(f"[Unsplash CDN] Failover: {e}")
 
     # 3. Always return a valid binary JPEG (never SVG text)
     return Response(make_fallback_jpeg_bytes(prompt), mimetype="image/jpeg")

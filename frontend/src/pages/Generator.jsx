@@ -546,6 +546,10 @@ export default function Generator() {
                       <img
                         src={sc.image_url}
                         alt={`Scene ${sc.scene}`}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80'
+                        }}
                         className="w-14 h-20 object-cover rounded-lg bg-surface-1 border border-white/10 flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
