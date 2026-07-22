@@ -118,6 +118,14 @@ def init_db():
             );
 
             CREATE INDEX IF NOT EXISTS idx_videos_user ON videos(user_email);
+
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                name          TEXT NOT NULL,
+                email         TEXT NOT NULL,
+                message       TEXT NOT NULL,
+                created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+            );
         """)
     print("[DB] SQLite database initialised at:", DB_PATH)
 
@@ -296,6 +304,48 @@ def delete_account():
 
     return jsonify({"message": "Account and all associated data deleted successfully"}), 200
 
+
+
+# ─── Contact Form Routes ───────────────────────────────────────────────────────
+@app.route("/api/contact", methods=["POST"])
+def submit_contact_message():
+    data    = request.get_json() or {}
+    name    = (data.get("name", "") or "").strip()
+    email   = (data.get("email", "") or "").strip().lower()
+    message = (data.get("message", "") or "").strip()
+
+    if not name or not email or not message:
+        return jsonify({"error": "Name, email, and message are required fields"}), 400
+
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)",
+            (name, email, message)
+        )
+
+    print(f"[Contact Form] New message from {name} ({email}): {message[:60]}...")
+    return jsonify({"message": "Thank you! Your message has been received."}), 201
+
+
+@app.route("/api/contact/messages", methods=["GET"])
+@jwt_required()
+def get_contact_messages():
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM contact_messages ORDER BY created_at DESC"
+        ).fetchall()
+
+    messages = [dict(r) for r in rows]
+    return jsonify({"messages": messages}), 200
+
+
+@app.route("/api/contact/messages/<int:msg_id>", methods=["DELETE"])
+@jwt_required()
+def delete_contact_message(msg_id):
+    with get_db() as conn:
+        conn.execute("DELETE FROM contact_messages WHERE id = ?", (msg_id,))
+
+    return jsonify({"message": "Message deleted"}), 200
 
 
 @app.route("/api/generate", methods=["POST"])

@@ -29,6 +29,8 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [formatFilter, setFormatFilter] = useState('All')
   
+  const [contactMessages, setContactMessages] = useState([])
+
   useEffect(() => {
     // Fetch user videos from backend
     axios.get('/api/videos', { headers: { Authorization: `Bearer ${token}` } })
@@ -36,6 +38,15 @@ export default function Dashboard() {
         if (res.data.videos?.length) {
           // Merge local mock videos with newly generated database videos
           setVideos([...res.data.videos, ...mockVideos])
+        }
+      })
+      .catch(() => {})
+
+    // Fetch contact form messages from backend
+    axios.get('/api/contact/messages', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (res.data.messages) {
+          setContactMessages(res.data.messages)
         }
       })
       .catch(() => {})
@@ -49,6 +60,16 @@ export default function Dashboard() {
       toast.success('Video deleted successfully!')
     } catch (err) {
       toast.error('Could not delete video')
+    }
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    try {
+      await axios.delete(`/api/contact/messages/${msgId}`, { headers: { Authorization: `Bearer ${token}` } })
+      setContactMessages((prev) => prev.filter((m) => m.id !== msgId))
+      toast.success('Message removed')
+    } catch (err) {
+      toast.error('Could not delete message')
     }
   }
 
@@ -137,6 +158,50 @@ export default function Dashboard() {
                 <span className="text-2xl">📁</span>
                 <p className="text-xs text-slate-500 font-bold">No videos found</p>
                 <p className="text-[10px] text-slate-600 max-w-[220px] leading-normal mx-auto">Try altering your search text or format filter, or create a new video from scratch.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Received Contact Messages Inbox */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>✉️ Received Contact Messages</span>
+                <span className="text-[10px] text-brand-light font-bold bg-brand/10 border border-brand/30 px-2 py-0.5 rounded-full">
+                  {contactMessages.length} Messages
+                </span>
+              </h2>
+            </div>
+
+            {contactMessages.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {contactMessages.map((msg) => (
+                  <div key={msg.id} className="card-glass p-5 border-white/[0.06] flex flex-col gap-2 relative">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs font-extrabold text-white">{msg.name}</p>
+                        <p className="text-[10px] text-brand-light font-semibold">{msg.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] text-slate-500 font-semibold">{msg.created_at}</span>
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="text-slate-500 hover:text-rose-400 text-xs p-1"
+                          title="Delete message"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-300 bg-white/[0.02] p-3 rounded-xl border border-white/[0.04] mt-1 leading-relaxed">
+                      "{msg.message}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card-glass p-6 text-center border-dashed border-white/10 text-xs text-slate-500">
+                No contact form submissions yet. When visitors fill out "Get in Touch", their messages will appear here.
               </div>
             )}
           </div>

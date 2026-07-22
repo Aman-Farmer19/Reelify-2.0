@@ -146,6 +146,37 @@ export default function LandingPage({ onAuth }) {
     return parseInt(localStorage.getItem('sandbox_generations_count') || '0', 10)
   })
 
+  // Contact form state
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false)
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault()
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      toast.error('Please fill in all fields.')
+      return
+    }
+
+    setIsSubmittingContact(true)
+    try {
+      await axios.post('/api/contact', {
+        name: contactName.trim(),
+        email: contactEmail.trim(),
+        message: contactMessage.trim(),
+      })
+      toast.success('Thank you! Your message has been received.')
+      setContactName('')
+      setContactEmail('')
+      setContactMessage('')
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Could not send message. Please try again.')
+    } finally {
+      setIsSubmittingContact(false)
+    }
+  }
+
   // Scroll to sandbox
   const scrollToSandbox = () => {
     const sandboxElement = document.getElementById('sandbox-container')
@@ -537,20 +568,47 @@ export default function LandingPage({ onAuth }) {
           <p className="text-slate-400 text-sm max-w-md mx-auto">Have questions, feedback, or partnership ideas? Drop us a message.</p>
         </div>
         <div className="card-glass p-8">
-          <form onSubmit={(e) => { e.preventDefault(); toast.success('Message sent! We\'ll get back to you soon.') }} className="space-y-4">
+          <form onSubmit={handleContactSubmit} className="space-y-4">
             <div>
               <label className="section-label">Your Name</label>
-              <input type="text" placeholder="ABC" required className="input-field" />
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                placeholder="Your Name"
+                required
+                className="input-field"
+              />
             </div>
             <div>
               <label className="section-label">Email</label>
-              <input type="email" placeholder="you@example.com" required className="input-field" />
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="input-field"
+              />
             </div>
             <div>
               <label className="section-label">Message</label>
-              <textarea placeholder="Tell us what you're thinking..." rows={4} required className="input-field resize-none" />
+              <textarea
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                placeholder="Tell us what you're thinking..."
+                rows={4}
+                required
+                className="input-field resize-none"
+              />
             </div>
-            <button type="submit" className="btn-primary w-full py-3 text-sm font-bold">Send Message</button>
+            <button
+              type="submit"
+              disabled={isSubmittingContact}
+              className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50"
+            >
+              {isSubmittingContact ? 'Sending...' : 'Send Message'}
+            </button>
           </form>
         </div>
       </section>
