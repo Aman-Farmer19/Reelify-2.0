@@ -266,6 +266,7 @@ export default function Generator() {
     // Step 3: Neural Voice Synthesis (edge-tts)
     setActiveStep('voice')
     setProgress(75)
+    let voiceUrlToUse = null
     if (form.voice !== 'No Voice' && apiData.script) {
       try {
         const vRes = await axios.post(
@@ -274,6 +275,7 @@ export default function Generator() {
           getAuthHeader()
         )
         if (vRes.data.audio_url) {
+          voiceUrlToUse = vRes.data.audio_url
           setGeneratedVoiceUrl(vRes.data.audio_url)
         }
       } catch (e) {
@@ -285,11 +287,13 @@ export default function Generator() {
     // Step 4: Music search
     setActiveStep('render')
     setProgress(90)
+    let musicUrlToUse = null
     if (form.music !== 'No Music') {
       try {
         const moodMap = { 'Upbeat Electronic': 'upbeat', 'Cinematic Epic': 'epic', 'Lo-Fi Chill': 'chill', 'Corporate': 'corporate' }
         const mRes = await axios.get(`/api/get_music?mood=${moodMap[form.music] || 'positive'}`)
         if (mRes.data.music_url) {
+          musicUrlToUse = mRes.data.music_url
           setGeneratedMusicUrl(mRes.data.music_url)
         }
       } catch (e) {
@@ -302,26 +306,35 @@ export default function Generator() {
     setActiveStep('')
     setPhase('done')
     toast.success('Script, Storyboard, AI Voice & Music ready!')
+
+    // Auto-trigger video compilation for seamless 1-click experience
+    if (scenesList.length > 0) {
+      const imgUrls = scenesList.map(s => s.image_url)
+      setTimeout(() => {
+        handleCompileVideo(imgUrls, voiceUrlToUse, musicUrlToUse, apiData.script)
+      }, 500)
+    }
   }
 
   // Trigger FFmpeg compilation
-  const handleCompileVideo = async () => {
-    if (!slideshowImages || slideshowImages.length === 0) {
+  const handleCompileVideo = async (overrideImages, overrideVoice, overrideMusic, overrideScript) => {
+    const imagesToUse = overrideImages || slideshowImages
+    if (!imagesToUse || imagesToUse.length === 0) {
       toast.error('No scene images available to compile video.')
       return
     }
 
     setIsCompiling(true)
-    const compileToast = toast.loading('FFmpeg is stitching scenes, audio, and captions into final MP4...')
+    const compileToast = toast.loading('Stitching scenes, voiceover, and captions into final HD MP4...')
 
     try {
       const { data } = await axios.post(
         '/api/compile_video',
         {
-          image_urls: slideshowImages,
-          audio_url: generatedVoiceUrl,
-          music_url: generatedMusicUrl,
-          script: editableScript || result?.script || '',
+          image_urls: imagesToUse,
+          audio_url: overrideVoice !== undefined ? overrideVoice : generatedVoiceUrl,
+          music_url: overrideMusic !== undefined ? overrideMusic : generatedMusicUrl,
+          script: overrideScript || editableScript || result?.script || '',
           duration: form.duration,
         },
         getAuthHeader()
@@ -701,24 +714,41 @@ export default function Generator() {
 
               {phase === 'done' && (
                 <div className="flex flex-col gap-2">
-                  <button
-                    onClick={handleCompileVideo}
-                    disabled={isCompiling}
-                    className="btn-primary text-xs font-bold py-3 rounded-xl w-full flex items-center justify-center gap-2"
-                  >
-                    {isCompiling ? '⚡ FFmpeg Compiling MP4...' : '🎬 Compile Final MP4 (FFmpeg)'}
-                  </button>
-
-                  {(compiledVideoUrl || result?.download_url) && (
-                    <a
-                      href={compiledVideoUrl || result.download_url}
-                      download="reelify_final.mp4"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold py-2.5 rounded-xl text-center transition-all"
+                  {compiledVideoUrl ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <a
+                        href={compiledVideoUrl}
+                        download="reelify_video.mp4"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-primary text-xs font-bold py-3.5 rounded-xl flex-1 flex items-center justify-center gap-2 shadow-glow"
+                      >
+                        📥 Download HD Video
+                      </a>
+                      <button
+                        onClick={() => handleCompileVideo()}
+                        disabled={isCompiling}
+                        className="btn-secondary text-xs font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-1.5"
+                        title="Re-render video with new script or audio edits"
+                      >
+                        ⚡ Re-render
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleCompileVideo()}
+                      disabled={isCompiling}
+                      className="btn-primary text-xs font-bold py-3.5 rounded-xl w-full flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      ⬇ Download MP4 Video
-                    </a>
+                      {isCompiling ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                          <span>Compiling Final HD Video...</span>
+                        </>
+                      ) : (
+                        '✨ Render Final Video'
+                      )}
+                    </button>
                   )}
                 </div>
               )}

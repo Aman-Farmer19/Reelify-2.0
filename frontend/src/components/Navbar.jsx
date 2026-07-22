@@ -87,20 +87,14 @@ export default function Navbar({ onAuth }) {
             className="relative group text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300 flex items-center gap-1.5"
             title="Try Free Generation Sandbox"
           >
-            <span>Generate</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-brand/20 border border-brand/40 text-brand-light rounded-full">
-              Free Demo
-            </span>
+            <span>Try Demo</span>
           </a>
         ) : (
           <Link 
             to="/generate" 
             className={`text-sm font-semibold transition-colors duration-300 flex items-center gap-1.5 ${location.pathname === '/generate' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'}`}
           >
-            <span>Studio Generator</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-brand/20 border border-brand/40 text-brand-light rounded-full">
-              Full AI
-            </span>
+            <span>Studio ✨</span>
           </Link>
         )}
         {isAuth && (
