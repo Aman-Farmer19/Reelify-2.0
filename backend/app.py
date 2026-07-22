@@ -793,7 +793,7 @@ def run_ffmpeg_pipeline(
 
 # ─── PIPELINE ENDPOINT 1: Storyboard via Gemini ───────────────────────────────
 @app.route("/api/generate_storyboard", methods=["POST"])
-@jwt_required()
+@jwt_required(optional=True)
 def generate_storyboard_endpoint():
     data       = request.get_json(force=True)
     script     = data.get("script", "").strip()
@@ -858,7 +858,7 @@ def generate_storyboard_endpoint():
 
 # ─── PIPELINE ENDPOINT 2: AI Voice via edge-tts ───────────────────────────────
 @app.route("/api/generate_voice", methods=["POST"])
-@jwt_required()
+@jwt_required(optional=True)
 def generate_voice_endpoint():
     try:
         import edge_tts  # noqa: F401
@@ -939,7 +939,7 @@ def get_music():
 
 # ─── PIPELINE ENDPOINT 4: Full FFmpeg video compile ───────────────────────────
 @app.route("/api/compile_video", methods=["POST"])
-@jwt_required()
+@jwt_required(optional=True)
 def compile_video_endpoint():
     if not get_ffmpeg_binary():
         return jsonify({"error": "FFmpeg is not installed on this server"}), 500

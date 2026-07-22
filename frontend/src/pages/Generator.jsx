@@ -140,6 +140,8 @@ export default function Generator() {
     }
   }, [phase, form.visualMode, slideshowImages])
 
+  const getAuthHeader = () => (token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+
   const generate = async () => {
     if (!form.prompt.trim()) { toast.error('Please enter a prompt first!'); return }
     setPhase('generating')
@@ -162,7 +164,7 @@ export default function Generator() {
       const { data } = await axios.post(
         '/api/generate',
         { prompt: form.prompt, options: { ...form, uploadedUrl: uploadedFileUrl } },
-        { headers: { Authorization: `Bearer ${token}` } }
+        getAuthHeader()
       )
       apiData = data
     } catch (err) {
@@ -190,7 +192,7 @@ export default function Generator() {
       const sbRes = await axios.post(
         '/api/generate_storyboard',
         { script: apiData.script || form.prompt, prompt: form.prompt, num_scenes: 4 },
-        { headers: { Authorization: `Bearer ${token}` } }
+        getAuthHeader()
       )
       scenesList = sbRes.data.scenes || []
       setStoryboardScenes(scenesList)
@@ -221,7 +223,7 @@ export default function Generator() {
         const vRes = await axios.post(
           '/api/generate_voice',
           { script: apiData.script, voice: form.voice },
-          { headers: { Authorization: `Bearer ${token}` } }
+          getAuthHeader()
         )
         if (vRes.data.audio_url) {
           setGeneratedVoiceUrl(vRes.data.audio_url)
@@ -274,7 +276,7 @@ export default function Generator() {
           script: editableScript || result?.script || '',
           duration: form.duration,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        getAuthHeader()
       )
 
       if (data.video_url) {
@@ -284,7 +286,7 @@ export default function Generator() {
         toast.error('Video compile finished without output file.', { id: compileToast })
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || 'FFmpeg compile failed. Ensure FFmpeg is installed on server.', { id: compileToast })
+      toast.error(err.response?.data?.error || err.message || 'FFmpeg compile failed. Please try again.', { id: compileToast })
     } finally {
       setIsCompiling(false)
     }
