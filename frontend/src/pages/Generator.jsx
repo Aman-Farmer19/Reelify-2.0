@@ -80,30 +80,78 @@ export default function Generator() {
   }
 
   // Voice Assistant speech recognizer
-  const handleVoiceInput = () => {
+  const recognitionRef = React.useRef(null)
+
+  const handleVoiceInput = async (e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+
+    if (isListening && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop()
+      } catch (err) {}
+      setIsListening(false)
+      toast('Voice assistant stopped', { icon: '🛑' })
+      return
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SpeechRecognition) {
-      toast.error('Voice assistant is not supported in this browser. Please use Google Chrome.')
+      toast.error('Voice assistant is not supported in this browser. Please use Google Chrome or Edge.')
+      return
+    }
+
+    try {
+      // Request mic permission explicitly to prevent system/Zoom popups
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(track => track.stop())
+    } catch (micErr) {
+      toast.error('Microphone access denied. Please allow microphone permissions in browser.')
       return
     }
 
     const recognition = new SpeechRecognition()
+    recognitionRef.current = recognition
+
     recognition.continuous = false
     recognition.lang = 'en-US'
     recognition.interimResults = false
 
     recognition.onstart = () => {
       setIsListening(true)
+      toast('Listening... Speak your prompt now!', { icon: '🎙️' })
     }
+
     recognition.onend = () => {
       setIsListening(false)
     }
-    recognition.onresult = (event) => {
-      const spokenText = event.results[0][0].transcript
-      setForm(prev => ({ ...prev, prompt: prev.prompt ? `${prev.prompt} ${spokenText}` : spokenText }))
-      toast.success('Voice prompt appended!')
+
+    recognition.onerror = (event) => {
+      setIsListening(false)
+      if (event.error === 'not-allowed') {
+        toast.error('Microphone access denied by browser.')
+      } else if (event.error === 'no-speech') {
+        toast('No speech detected. Try again!', { icon: '🤔' })
+      } else {
+        toast.error(`Voice error: ${event.error}`)
+      }
     }
-    recognition.start()
+
+    recognition.onresult = (event) => {
+      const spokenText = event.results[0]?.[0]?.transcript
+      if (spokenText) {
+        setForm(prev => ({ ...prev, prompt: prev.prompt ? `${prev.prompt} ${spokenText}` : spokenText }))
+        toast.success(`Captured: "${spokenText}"`)
+      }
+    }
+
+    try {
+      recognition.start()
+    } catch (err) {
+      toast.error('Could not start voice recognition. Please try again.')
+    }
   }
 
   // Upload custom Canva exported assets
@@ -353,6 +401,7 @@ export default function Generator() {
                   />
                   {/* Voice microphone button */}
                   <button
+                    type="button"
                     onClick={handleVoiceInput}
                     disabled={phase === 'generating'}
                     className={`absolute right-3.5 bottom-3.5 w-9 h-9 rounded-xl flex items-center justify-center border transition-all ${
@@ -360,7 +409,7 @@ export default function Generator() {
                         ? 'bg-brand-glow border-brand-glow text-white shadow-glow animate-pulse'
                         : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white hover:border-brand/30'
                     }`}
-                    title="Speak prompt with Voice Assistant"
+                    title={isListening ? "Stop listening" : "Speak prompt with Voice Assistant"}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
