@@ -38,7 +38,7 @@ export default function Generator() {
     voice: 'Aria (Female)',
     music: 'Upbeat Electronic',
     captions: 'Animated Bold',
-    visualMode: 'ai_slideshow', // stock | ai_slideshow | upload
+    visualMode: 'stock', // stock | upload
   })
   const [phase, setPhase] = useState('idle') // idle | generating | done
   const [progress, setProgress] = useState(0)
@@ -434,42 +434,30 @@ export default function Generator() {
               {/* Visual Mode selector */}
               <div>
                 <label className="section-label">Visual Match Mode</label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setForm({ ...form, visualMode: 'ai_slideshow' })}
-                    disabled={phase === 'generating'}
-                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
-                      form.visualMode === 'ai_slideshow'
-                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
-                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    🎨 AI Storyboard Images
-                    <span className="text-[9px] font-medium opacity-70">Pollinations / AI scenes</span>
-                  </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <button
                     onClick={() => setForm({ ...form, visualMode: 'stock' })}
                     disabled={phase === 'generating'}
-                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                    className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                       form.visualMode === 'stock'
                         ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
                         : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
                     }`}
                   >
-                    🎥 Stock Video Match
-                    <span className="text-[9px] font-medium opacity-70">Pexels / Pixabay</span>
+                    🎥 HD Stock Video Match
+                    <span className="text-[10px] font-medium opacity-70">Pexels 9:16 Vertical HD</span>
                   </button>
                   <button
                     onClick={() => setForm({ ...form, visualMode: 'upload' })}
                     disabled={phase === 'generating'}
-                    className={`px-3 py-3 rounded-2xl text-[11px] font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 ${
+                    className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                       form.visualMode === 'upload'
                         ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
                         : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
                     }`}
                   >
-                    📤 Canva / Local Upload
-                    <span className="text-[9px] font-medium opacity-70">Upload Canva assets</span>
+                    📁 Canva / Custom Upload
+                    <span className="text-[10px] font-medium opacity-70">Upload your own videos</span>
                   </button>
                 </div>
               </div>
@@ -543,37 +531,7 @@ export default function Generator() {
               </div>
             </div>
 
-            {/* Storyboard Scene Breakdown */}
-            {phase === 'done' && storyboardScenes.length > 0 && (
-              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <label className="section-label mb-0">🎬 AI Storyboard Breakdown</label>
-                  <span className="text-[10px] text-brand-light font-bold bg-brand/10 border border-brand/20 px-2 py-0.5 rounded-full">
-                    {storyboardScenes.length} Scenes
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {storyboardScenes.map((sc, idx) => (
-                    <div key={idx} className="bg-white/[0.02] border border-white/[0.06] p-3 rounded-xl flex gap-3 items-center">
-                      <img
-                        src={sc.image_url}
-                        alt={`Scene ${sc.scene}`}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=300&q=80'
-                        }}
-                        className="w-14 h-20 object-cover rounded-lg bg-surface-1 border border-white/10 flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{sc.title || `Scene ${sc.scene}`}</p>
-                        <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{sc.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* Generated Audio & Voice Preview */}
             {phase === 'done' && (generatedVoiceUrl || generatedMusicUrl) && (
