@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import Sidebar from '../components/Sidebar'
 import VideoCard from '../components/VideoCard'
@@ -39,6 +40,17 @@ export default function Dashboard() {
       })
       .catch(() => {})
   }, [token])
+
+  const handleDeleteVideo = async (videoId) => {
+    if (!window.confirm('Are you sure you want to delete this video?')) return
+    try {
+      await axios.delete(`/api/videos/${videoId}`, { headers: { Authorization: `Bearer ${token}` } })
+      setVideos((prev) => prev.filter((v) => v.id !== videoId))
+      toast.success('Video deleted successfully!')
+    } catch (err) {
+      toast.error('Could not delete video')
+    }
+  }
 
   // Filter video items based on inputs
   const filteredVideos = videos.filter(v => {
@@ -117,7 +129,7 @@ export default function Dashboard() {
             {filteredVideos.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVideos.map((v, i) => (
-                  <VideoCard key={i} video={v} index={i} />
+                  <VideoCard key={v.id || i} video={v} index={i} onDelete={handleDeleteVideo} />
                 ))}
               </div>
             ) : (

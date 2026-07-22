@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import ProfileModal from './ProfileModal'
 
 const links = [
   { 
@@ -65,10 +66,24 @@ const settingsLinks = [
 
 export default function Sidebar() {
   const { pathname } = useLocation()
+  const [showProfileModal, setShowProfileModal] = useState(false)
 
-  const NavItem = ({ to, icon, label }) => {
+  const NavItem = ({ to, icon, label, onClick }) => {
     // Determine active menu item
     const active = pathname === to && label !== 'My Videos' && label !== 'Analytics' && label !== 'Profile' && label !== 'Preferences'
+    
+    if (onClick) {
+      return (
+        <button
+          onClick={onClick}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-300 text-slate-400 border border-transparent hover:bg-white/[0.03] hover:text-slate-200 text-left"
+        >
+          <span className="flex-shrink-0 text-slate-400 group-hover:text-white">{icon}</span>
+          {label}
+        </button>
+      )
+    }
+
     return (
       <Link
         to={to}
@@ -94,7 +109,9 @@ export default function Sidebar() {
         <div>
           <div className="mb-3 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Settings</div>
           <div className="flex flex-col gap-1.5">
-            {settingsLinks.map((l) => <NavItem key={l.label} {...l} />)}
+            {settingsLinks.map((l) => (
+              <NavItem key={l.label} {...l} onClick={() => setShowProfileModal(true)} />
+            ))}
           </div>
         </div>
       </div>
@@ -107,6 +124,8 @@ export default function Sidebar() {
           Upgrade Now
         </button>
       </div>
+
+      {showProfileModal && <ProfileModal onClose={() => setShowProfileModal(false)} />}
     </aside>
   )
 }

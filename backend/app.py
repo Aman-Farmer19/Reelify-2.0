@@ -219,6 +219,85 @@ def get_videos():
     return jsonify({"videos": videos}), 200
 
 
+@app.route("/api/videos/<int:video_id>", methods=["DELETE"])
+@jwt_required()
+def delete_video(video_id):
+    email = get_jwt_identity()
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM videos WHERE id = ? AND user_email = ?",
+            (video_id, email)
+        ).fetchone()
+
+        if not row:
+            return jsonify({"error": "Video not found or access denied"}), 404
+
+        conn.execute("DELETE FROM videos WHERE id = ?", (video_id,))
+
+    # Clean up associated local files if present
+    dl_url = row["download_url"] or ""
+    if dl_url.startswith("/api/media/"):
+        fname = dl_url.replace("/api/media/", "")
+        fpath = os.path.join(MEDIA_FOLDER, fname)
+        if os.path.isfile(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
+
+    return jsonify({"message": "Video deleted successfully"}), 200
+
+
+@app.route("/api/user/profile", methods=["PUT"])
+@jwt_required()
+def update_profile():
+    email = get_jwt_identity()
+    data  = request.get_json() or {}
+    name  = (data.get("name", "") or "").strip()
+    new_pass = data.get("password", "") or ""
+
+    if not name and not new_pass:
+        return jsonify({"error": "No update fields provided"}), 400
+
+    with get_db() as conn:
+        if name and new_pass:
+            conn.execute(
+                "UPDATE users SET name = ?, password_hash = ? WHERE email = ?",
+                (name, generate_password_hash(new_pass), email)
+            )
+        elif name:
+            conn.execute(
+                "UPDATE users SET name = ? WHERE email = ?",
+                (name, email)
+            )
+        elif new_pass:
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE email = ?",
+                (generate_password_hash(new_pass), email)
+            )
+
+        updated = conn.execute("SELECT name, email FROM users WHERE email = ?", (email,)).fetchone()
+
+    return jsonify({
+        "message": "Profile updated successfully",
+        "user": {"name": updated["name"], "email": updated["email"]}
+    }), 200
+
+
+@app.route("/api/user/account", methods=["DELETE"])
+@jwt_required()
+def delete_account():
+    email = get_jwt_identity()
+    with get_db() as conn:
+        # Delete user videos
+        conn.execute("DELETE FROM videos WHERE user_email = ?", (email,))
+        # Delete user account
+        conn.execute("DELETE FROM users WHERE email = ?", (email,))
+
+    return jsonify({"message": "Account and all associated data deleted successfully"}), 200
+
+
+
 @app.route("/api/generate", methods=["POST"])
 def generate_video():
     """
@@ -793,7 +872,7 @@ def run_ffmpeg_pipeline(
 
 # ─── PIPELINE ENDPOINT 1: Storyboard via Gemini ───────────────────────────────
 @app.route("/api/generate_storyboard", methods=["POST"])
-@jwt_required(optional=True)
+@jwt_required()
 def generate_storyboard_endpoint():
     data       = request.get_json(force=True)
     script     = data.get("script", "").strip()
@@ -858,7 +937,7 @@ def generate_storyboard_endpoint():
 
 # ─── PIPELINE ENDPOINT 2: AI Voice via edge-tts ───────────────────────────────
 @app.route("/api/generate_voice", methods=["POST"])
-@jwt_required(optional=True)
+@jwt_required()
 def generate_voice_endpoint():
     try:
         import edge_tts  # noqa: F401
@@ -939,7 +1018,7 @@ def get_music():
 
 # ─── PIPELINE ENDPOINT 4: Full FFmpeg video compile ───────────────────────────
 @app.route("/api/compile_video", methods=["POST"])
-@jwt_required(optional=True)
+@jwt_required()
 def compile_video_endpoint():
     if not get_ffmpeg_binary():
         return jsonify({"error": "FFmpeg is not installed on this server"}), 500

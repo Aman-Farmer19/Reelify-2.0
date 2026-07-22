@@ -154,12 +154,12 @@ export default function LandingPage({ onAuth }) {
     }
   }
 
-  // Handle Free Sandbox Trial (up to 3 times)
+  // Handle Free Sandbox Trial (up to 2 times)
   const generateSandboxDemo = async () => {
     const currentCount = parseInt(localStorage.getItem('sandbox_generations_count') || '0', 10)
     
-    if (currentCount >= 3) {
-      toast.error('You have reached your limit of 3 free demo generations! Please sign up to access the full studio.')
+    if (currentCount >= 2) {
+      toast.error('You have reached your limit of 2 free demo generations! Please sign up or log in to access the full Studio Generator AI.')
       onAuth('signup')
       return
     }
@@ -191,12 +191,12 @@ export default function LandingPage({ onAuth }) {
       setSandboxResultUrl(`/api/generate_image?prompt=${encodeURIComponent(selectedTopic.prompt)}&seed=${42 + currentCount}`)
     }
 
-    // Increment trial count up to 3
+    // Increment trial count up to 2
     const newCount = currentCount + 1
     localStorage.setItem('sandbox_generations_count', newCount.toString())
     setUsedTrialCount(newCount)
     setSandboxPhase('done')
-    toast.success(`Demo generated! (${newCount}/3 free generations used)`)
+    toast.success(`Demo generated! (${newCount}/2 free generations used)`)
   }
 
   return (
@@ -228,10 +228,10 @@ export default function LandingPage({ onAuth }) {
         </p>
 
         <button 
-          onClick={() => navigate('/generate')}
+          onClick={isAuth ? () => navigate('/generate') : scrollToSandbox}
           className="bg-white text-black font-extrabold text-sm px-8 py-4 rounded-full hover:bg-slate-200 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-2"
         >
-          <span>Create with Reelify Studio</span>
+          <span>{isAuth ? 'Open Studio Generator AI' : 'Create with Reelify'}</span>
           <span className="text-xs">→</span>
         </button>
       </section>
@@ -242,13 +242,13 @@ export default function LandingPage({ onAuth }) {
           
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4 shadow-glow">
-              ⚡ Try Reelify Demo ({Math.max(0, 3 - usedTrialCount)} / 3 Free Generations Left)
+              ⚡ Try Reelify Demo ({Math.max(0, 2 - usedTrialCount)} / 2 Free Generations Left)
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-2">
               Free Generation Sandbox
             </h2>
             <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-              Select one of the 10 cinematic preset prompts below. Get up to 3 free photorealistic image or video generations before signing up.
+              Select one of the 10 cinematic preset prompts below. Get up to 2 free demo generations before creating an account for full studio access.
             </p>
           </div>
 

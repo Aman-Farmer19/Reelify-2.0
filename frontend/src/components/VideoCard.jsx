@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 
-export default function VideoCard({ video, index = 0 }) {
+export default function VideoCard({ video, index = 0, onDelete }) {
   const videoRef = useRef(null)
   const [hovered, setHovered] = useState(false)
 
@@ -62,10 +62,26 @@ export default function VideoCard({ video, index = 0 }) {
           </div>
         </div>
 
-        {/* Video status pill */}
-        <span className="absolute top-3 right-3 bg-brand/10 backdrop-blur-md border border-brand/35 text-brand-light text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-          {video?.duration || '15s'}
-        </span>
+        {/* Video status pill & Delete button */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
+          {onDelete && video?.id && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(video.id)
+              }}
+              title="Delete Video"
+              className="bg-black/60 hover:bg-rose-500/80 text-white p-1.5 rounded-lg border border-white/10 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+          <span className="bg-brand/10 backdrop-blur-md border border-brand/35 text-brand-light text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            {video?.duration || '15s'}
+          </span>
+        </div>
       </div>
 
       {/* Info Panel */}
