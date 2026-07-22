@@ -664,16 +664,28 @@ def generate_image():
     prompt = request.args.get("prompt", "abstract art")
     seed   = request.args.get("seed", "42")
 
+    # Helper to generate a valid JPEG binary placeholder using Pillow (never fails FFmpeg)
+    def make_fallback_jpeg_bytes(title: str = "AI SCENE") -> bytes:
+        try:
+            from PIL import Image, ImageDraw
+            img  = Image.new("RGB", (720, 1280), color=(15, 15, 30))
+            draw = ImageDraw.Draw(img)
+            # Draw subtle gradient line
+            draw.rectangle([0, 600, 720, 680], fill=(139, 92, 246))
+            buf  = io.BytesIO()
+            img.save(buf, format="JPEG", quality=90)
+            return buf.getvalue()
+        except Exception:
+            # Minimal 1x1 JPEG byte stream fallback
+            return b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\x7f\x00\xd9'
+
     # 1. Try Gemini image generation
     gemini_key = os.getenv("GEMINI_API_KEY")
     if gemini_key and genai:
         try:
             genai.configure(api_key=gemini_key)
             model = genai.GenerativeModel("imagegeneration@002")
-            resp  = model.generate_content(
-                f"Generate a photorealistic image of: {prompt}",
-                generation_config={"mime_type": "image/jpeg"}
-            )
+            resp  = model.generate_content(f"Generate a photorealistic image of: {prompt}")
             for part in resp.candidates[0].content.parts:
                 if part.inline_data:
                     return Response(part.inline_data.data, mimetype="image/jpeg")
@@ -684,38 +696,19 @@ def generate_image():
     encoded_prompt   = urllib.parse.quote(prompt)
     pollinations_url = (
         f"https://image.pollinations.ai/prompt/{encoded_prompt}"
-        f"?width=1024&height=1024&seed={seed}&nologo=true"
+        f"?width=720&height=1280&seed={seed}&nologo=true"
     )
     try:
         res = requests.get(pollinations_url, timeout=12)
-        if res.status_code == 200:
+        if res.status_code == 200 and res.content.startswith(b"\xff\xd8"):  # Valid JPEG header
             return Response(res.content, mimetype="image/jpeg")
+        elif res.status_code == 200 and b"PNG" in res.content[:10]:
+            return Response(res.content, mimetype="image/png")
     except Exception as e:
         print(f"[Pollinations] Fallback failed: {e}")
 
-    # 3. SVG placeholder (never fails)
-    svg_content = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
-        <rect width="100%" height="100%" fill="#070714"/>
-        <defs>
-            <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#8b5cf6"/>
-                <stop offset="100%" stop-color="#d946ef"/>
-            </linearGradient>
-        </defs>
-        <circle cx="400" cy="400" r="220" fill="url(#g)" opacity="0.15"/>
-        <g stroke="rgba(255,255,255,0.06)" stroke-width="2" fill="none">
-            <circle cx="400" cy="400" r="300"/>
-            <circle cx="400" cy="400" r="200"/>
-            <circle cx="400" cy="400" r="100"/>
-            <line x1="100" y1="400" x2="700" y2="400"/>
-            <line x1="400" y1="100" x2="400" y2="700"/>
-        </g>
-        <text x="50%" y="48%" dominant-baseline="middle" text-anchor="middle"
-              fill="#c084fc" font-family="sans-serif" font-size="28" font-weight="bold">AI SCENE COMPILED</text>
-        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-              fill="#64748b" font-family="sans-serif" font-size="16">Photorealistic Scene Loaded Successfully</text>
-    </svg>"""
-    return Response(svg_content, mimetype="image/svg+xml")
+    # 3. Always return a valid binary JPEG (never SVG text)
+    return Response(make_fallback_jpeg_bytes(prompt), mimetype="image/jpeg")
 
 
 # ─── File Upload (FIX 5: auth required + extension + size check) ──────────────
@@ -1089,7 +1082,7 @@ def compile_video_endpoint():
     os.makedirs(work_dir, exist_ok=True)
 
     try:
-        # 1. Download images
+        # 1. Download images and validate format for FFmpeg
         base_url   = os.getenv("BASE_URL", f"http://127.0.0.1:{os.getenv('PORT', '5000')}")
         img_paths  = []
         for i, url in enumerate(image_urls[:6]):
@@ -1097,9 +1090,22 @@ def compile_video_endpoint():
             fetch_url = (base_url + url) if url.startswith("/") else url
             try:
                 r = requests.get(fetch_url, timeout=20)
-                if r.status_code == 200:
+                # Ensure downloaded content is a valid binary image (not SVG text or HTML error)
+                content = r.content if r.status_code == 200 else b""
+                if content.startswith(b"<svg") or b"<html" in content[:100] or len(content) < 100:
+                    # Generate a valid fallback JPEG image
+                    try:
+                        from PIL import Image, ImageDraw
+                        im = Image.new("RGB", (720, 1280), color=(15, 15, 30))
+                        d = ImageDraw.Draw(im)
+                        d.rectangle([0, 500 + (i*50), 720, 580 + (i*50)], fill=(139, 92, 246))
+                        im.save(dest, format="JPEG", quality=90)
+                        img_paths.append(dest)
+                    except Exception:
+                        pass
+                else:
                     with open(dest, "wb") as fh:
-                        fh.write(r.content)
+                        fh.write(content)
                     img_paths.append(dest)
             except Exception as e:
                 print(f"[Compile] Image download failed ({url}): {e}")
