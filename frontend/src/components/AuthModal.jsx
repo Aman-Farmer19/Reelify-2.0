@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 
 export default function AuthModal({ mode, onClose, onSwitch }) {
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -25,6 +27,7 @@ export default function AuthModal({ mode, onClose, onSwitch }) {
       login(data.user, data.token)
       toast.success(isLogin ? 'Welcome back!' : 'Account created!')
       onClose()
+      navigate('/generate')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Something went wrong')
     } finally {

@@ -132,6 +132,760 @@ const features = [
   },
 ]
 
+// Showcase Presets Data (Coffee, Fitness, Travel, Car, Food, Tech)
+const SHOWCASE_PRESETS = [
+  {
+    id: 'coffee',
+    category: 'Commercial',
+    icon: '☕',
+    title: 'Coffee Advertisement',
+    prompt: 'A cinematic luxury coffee advertisement for Instagram Reels with slow-motion pouring shots, warm lighting and elegant typography.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (35mm Anamorphic)',
+      'Voice Selected (Aria Warm Tone)',
+      'Music Selected (Upbeat Jazz & Chill)'
+    ],
+    scenes: ['Coffee Beans', 'Grinding', 'Pouring', 'Product Reveal'],
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Creamy%20hot%20coffee%20espresso%20pouring%20into%20glass%20mug%20slow%20motion%20photorealistic?width=720&height=1280&seed=80',
+    tag: 'Reels 9:16'
+  },
+  {
+    id: 'fitness',
+    category: 'Motivation',
+    icon: '🏋️',
+    title: 'Fitness Motivation',
+    prompt: 'High-energy fitness motivational reel with fast-paced cuts, intense gym workout action, volumetric lighting, and dramatic voiceover.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (Handheld Tracking)',
+      'Voice Selected (Guy Energetic Tone)',
+      'Music Selected (Aggressive Rock Beat)'
+    ],
+    scenes: ['Warmup Focus', 'Heavy Lifts', 'Sweat & Drive', 'Victory Shot'],
+    videoUrl: 'https://github.com/intel-iot-devkit/sample-videos/raw/master/classroom.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Aggressive%20gym%20workout%20crossfit%20athlete%20cinematic%20lighting%20photorealistic?width=720&height=1280&seed=12',
+    tag: 'TikTok 9:16'
+  },
+  {
+    id: 'travel',
+    category: 'Vlog',
+    icon: '⛩️',
+    title: 'Travel Japan',
+    prompt: 'A breathtaking 4K travel vlog reel showcasing neon Tokyo streets, serene Kyoto temples, bullet trains, and Mount Fuji at sunrise.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (Drone Smooth Glide)',
+      'Voice Selected (Jenny Calm Accent)',
+      'Music Selected (Lo-fi Chill Hop)'
+    ],
+    scenes: ['Kyoto Temple', 'Shinjuku Neon', 'Bullet Train', 'Fuji Sunrise'],
+    videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Tokyo%20neon%20street%20rain%20reflections%20japan%20travel%20vlog%20cinematic?width=720&height=1280&seed=70',
+    tag: 'YouTube Shorts 9:16'
+  },
+  {
+    id: 'car',
+    category: 'Automotive',
+    icon: '🏎️',
+    title: 'Luxury Car',
+    prompt: 'Sleek black supercar driving fast along wet neon city streets at night with rain reflections and 35mm cinematic lens flare.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (Low Dolly Tracking)',
+      'Voice Selected (Davis Deep Voice)',
+      'Music Selected (Cyberpunk Synthwave)'
+    ],
+    scenes: ['Engine Ignition', 'Rain Drift', 'Cockpit View', 'Neon Highway'],
+    videoUrl: 'https://github.com/intel-iot-devkit/sample-videos/raw/master/people-detection.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Cyberpunk%20sports%20car%20driving%20on%20wet%20neon-lit%20highway%20at%20night%208k?width=720&height=1280&seed=60',
+    tag: 'Reels 9:16'
+  },
+  {
+    id: 'food',
+    category: 'Culinary',
+    icon: '🍕',
+    title: 'Food Commercial',
+    prompt: 'Mouth-watering artisanal pizza commercial featuring sizzling cheese pull, wood-fired oven flames, and macro close-ups.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (Macro Slow Push)',
+      'Voice Selected (Amber Smooth Voice)',
+      'Music Selected (Acoustic Upbeat)'
+    ],
+    scenes: ['Dough Toss', 'Wood Oven', 'Cheese Pull', 'Final Plating'],
+    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer_hd.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Close%20up%20of%20chef%20cooking%20in%20high%20end%20kitchen%20with%20fire%20flare%20photorealistic?width=720&height=1280&seed=50',
+    tag: 'Reels 9:16'
+  },
+  {
+    id: 'tech',
+    category: 'Software',
+    icon: '🤖',
+    title: 'AI Technology',
+    prompt: 'Futuristic AI software demo reel with holographic data nodes, glowing glass interface, and clean modern aesthetic.',
+    checklist: [
+      'Script Generated',
+      'Storyboard Created',
+      'Camera Plan Ready (FPV Flythrough)',
+      'Voice Selected (Steffan Tech Voice)',
+      'Music Selected (Ambient Tech Beat)'
+    ],
+    scenes: ['Prompt Input', 'Neural Process', 'Voice Synthesis', 'Exported Reel'],
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    posterUrl: 'https://image.pollinations.ai/prompt/Clean%20minimalist%20coding%20setup%20with%20ambient%20purple%20glow%20on%20desk?width=720&height=1280&seed=90',
+    tag: 'Shorts 9:16'
+  }
+]
+
+// Animated Product Showcase Section
+function ProductShowcaseSection() {
+  const [activePresetIndex, setActivePresetIndex] = useState(0)
+  const [progressPercentage, setProgressPercentage] = useState(0)
+
+  useEffect(() => {
+    const duration = 5000 // Auto switch every 5s
+    const interval = 50
+    let stepCount = 0
+    const maxSteps = duration / interval
+
+    const timer = setInterval(() => {
+      stepCount++
+      setProgressPercentage((stepCount / maxSteps) * 100)
+
+      if (stepCount >= maxSteps) {
+        stepCount = 0
+        setActivePresetIndex((prevIndex) => (prevIndex + 1) % SHOWCASE_PRESETS.length)
+      }
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [activePresetIndex])
+
+  const activePreset = SHOWCASE_PRESETS[activePresetIndex]
+
+  return (
+    <section className="px-6 py-16 max-w-6xl mx-auto scroll-mt-24 relative">
+      {/* Section Header */}
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-extrabold text-brand-light mb-3 shadow-glow">
+          <span className="w-2 h-2 rounded-full bg-brand-light animate-ping" />
+          <span>Interactive Product Showcase</span>
+        </div>
+        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">
+          Prompt to Finished AI Video in Seconds
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          See how Reelify's multi-step AI pipeline automatically generates scripts, plans camera shots, selects audio, and renders a 9:16 short video.
+        </p>
+      </div>
+
+      {/* Preset Selector Tabs */}
+      <div className="flex items-center justify-center flex-wrap gap-2 mb-10">
+        {SHOWCASE_PRESETS.map((preset, idx) => {
+          const isActive = idx === activePresetIndex
+          return (
+            <button
+              key={preset.id}
+              onClick={() => {
+                setActivePresetIndex(idx)
+                setProgressPercentage(0)
+              }}
+              className={`relative overflow-hidden px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all duration-300 flex items-center gap-2 border ${
+                isActive
+                  ? 'bg-brand/20 border-brand text-white shadow-glow scale-[1.02]'
+                  : 'bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white hover:border-white/15'
+              }`}
+            >
+              <span>{preset.icon}</span>
+              <span>{preset.title}</span>
+
+              {/* Progress Bar Line */}
+              {isActive && (
+                <div
+                  className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-brand to-brand-glow transition-all duration-75"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Responsive Horizontal / Vertical Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        
+        {/* Left Side: Animated Workflow Step Cards (Cards 1, 2, 3) */}
+        <div className="lg:col-span-7 flex flex-col gap-4 justify-between">
+          
+          {/* Card 1: Prompt */}
+          <div className="card-glass p-5 border-white/[0.08] relative group hover:border-brand/30 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-brand/20 border border-brand/40 text-brand-light flex items-center justify-center text-xs font-black">
+                  1
+                </span>
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Card 1: Prompt</span>
+              </div>
+              <span className="text-[10px] font-extrabold bg-white/[0.04] text-slate-400 px-2.5 py-0.5 rounded-full border border-white/[0.06]">
+                {activePreset.category}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-200 leading-relaxed bg-black/40 p-3 rounded-xl border border-white/[0.04] font-mono">
+              "{activePreset.prompt}"
+            </p>
+          </div>
+
+          {/* Connector 1 -> 2 */}
+          <div className="flex justify-center -my-2 z-10">
+            <div className="w-0.5 h-6 bg-gradient-to-b from-brand to-brand-glow animate-pulse" />
+          </div>
+
+          {/* Card 2: AI Creative Director */}
+          <div className="card-glass p-5 border-white/[0.08] relative group hover:border-brand/30 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-brand/20 border border-brand/40 text-brand-light flex items-center justify-center text-xs font-black">
+                  2
+                </span>
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Card 2: AI Creative Director</span>
+              </div>
+              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Active Engine
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold">
+              {activePreset.checklist.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.05] p-2 rounded-xl text-slate-200">
+                  <span className="text-emerald-400 font-extrabold text-xs">✓</span>
+                  <span className="text-[11px] font-medium">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Connector 2 -> 3 */}
+          <div className="flex justify-center -my-2 z-10">
+            <div className="w-0.5 h-6 bg-gradient-to-b from-brand to-brand-glow animate-pulse" />
+          </div>
+
+          {/* Card 3: Storyboard */}
+          <div className="card-glass p-5 border-white/[0.08] relative group hover:border-brand/30 transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-brand/20 border border-brand/40 text-brand-light flex items-center justify-center text-xs font-black">
+                  3
+                </span>
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Card 3: Storyboard</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-brand-light bg-brand/10 border border-brand/30 px-2.5 py-0.5 rounded-full">
+                4 Scenes Planned
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {activePreset.scenes.map((scene, idx) => (
+                <div key={idx} className="flex flex-col items-center justify-center bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl text-center relative">
+                  <span className="text-[9px] font-extrabold text-brand-light uppercase mb-0.5">Scene {idx + 1}</span>
+                  <span className="text-xs font-bold text-white leading-tight">{scene}</span>
+                  {idx < 3 && (
+                    <span className="hidden sm:block absolute -right-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs font-bold z-10">➔</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Side: Card 4 Video Generated Phone Preview */}
+        <div className="lg:col-span-5 flex flex-col items-center justify-center">
+          <div className="w-full max-w-[310px] card-glass p-4 border-brand/30 rounded-3xl relative shadow-glow-strong flex flex-col gap-3 group">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-black">
+                  4
+                </span>
+                <span className="text-xs font-extrabold text-white uppercase tracking-wider">Card 4: Video Generated</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Autoplay Reel
+              </span>
+            </div>
+
+            {/* Vertical Smartphone Mockup */}
+            <div className="aspect-[9/16] w-full rounded-2xl overflow-hidden bg-surface-0 border border-white/10 relative shadow-2xl flex items-center justify-center">
+              <video
+                key={activePreset.id}
+                src={activePreset.videoUrl}
+                poster={activePreset.posterUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+              />
+
+              {/* Top Badge */}
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
+                <span className="bg-black/60 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-lg text-[9px] font-extrabold text-white tracking-widest uppercase">
+                  {activePreset.tag}
+                </span>
+                <span className="bg-brand/80 backdrop-blur-md border border-brand/40 px-2.5 py-1 rounded-lg text-[9px] font-black text-white shadow-glow">
+                  REELIFY AI
+                </span>
+              </div>
+
+              {/* Bottom Caption HUD */}
+              <div className="absolute bottom-4 left-3 right-3 bg-black/75 backdrop-blur-md border border-white/10 p-3 rounded-xl text-center text-xs font-bold text-white z-10 shadow-lg">
+                <p className="text-[9px] text-amber-300 font-extrabold uppercase tracking-wider mb-0.5">💬 Generated AI Caption</p>
+                <p className="text-[11px] font-medium text-slate-200 line-clamp-2">
+                  "{activePreset.prompt.slice(0, 70)}..."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  )
+}
+
+// Typing Effect for Step 1
+function Step1TypingEffect() {
+  const fullText = "A cinematic coffee advertisement for Instagram Reels."
+  const [displayedText, setDisplayedText] = useState('')
+
+  useEffect(() => {
+    let index = 0
+    const interval = setInterval(() => {
+      if (index <= fullText.length) {
+        setDisplayedText(fullText.slice(0, index))
+        index++
+      } else {
+        setTimeout(() => {
+          index = 0
+          setDisplayedText('')
+        }, 3000)
+      }
+    }, 60)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="bg-black/50 p-3.5 rounded-xl border border-white/10 font-mono text-xs text-brand-light flex items-center gap-2 shadow-inner">
+      <span className="text-slate-500 font-bold">❯</span>
+      <span>{displayedText}</span>
+      <span className="w-2 h-4 bg-brand-light animate-pulse inline-block" />
+    </div>
+  )
+}
+
+const PROMPT_ENGINEERING_CHIPS = [
+  { icon: '👤', label: 'Subject', value: 'A professional barista' },
+  { icon: '🎥', label: 'Camera', value: '35mm anamorphic slow dolly' },
+  { icon: '💡', label: 'Lighting', value: 'Golden hour warm rim light' },
+  { icon: '🎭', label: 'Mood', value: 'Luxury, premium, warm' },
+  { icon: '🌊', label: 'Motion', value: 'Slow motion espresso pour' },
+  { icon: '📱', label: 'Platform', value: 'Instagram Reels (9:16)' }
+]
+
+const DIRECTOR_CHECKLIST = [
+  'Script Generated',
+  'Storyboard Created',
+  'Camera Plan Ready',
+  'Voice Selected',
+  'Music Selected',
+  'Captions Added'
+]
+
+const RENDERING_STEPS = [
+  { label: 'Analyzing Prompt' },
+  { label: 'Searching Assets' },
+  { label: 'Generating Voice' },
+  { label: 'Rendering Video' },
+  { label: 'Encoding MP4' },
+]
+
+const EXPORT_PLATFORMS = [
+  { icon: '📸', name: 'Instagram Reels', format: '9:16 Vertical HD' },
+  { icon: '🔴', name: 'YouTube Shorts', format: '9:16 60 FPS' },
+  { icon: '🎵', name: 'TikTok', format: '9:16 High Bitrate' }
+]
+
+// Animated Vertical Timeline: How Reelify Works Section
+function HowReelifyWorksSection() {
+  return (
+    <section className="px-6 py-20 max-w-5xl mx-auto relative scroll-mt-24">
+      {/* Section Header */}
+      <div className="text-center mb-16">
+        <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-extrabold text-brand-light mb-3 shadow-glow">
+          <span className="text-xs">⚙️</span>
+          <span>End-to-End Workflow</span>
+        </div>
+        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">
+          How Reelify Works
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          From one idea to a professionally generated short video in just a few intelligent steps.
+        </p>
+      </div>
+
+      {/* Centered Vertical Timeline Container */}
+      <div className="relative border-l-2 border-brand/40 ml-4 sm:ml-8 md:ml-12 pl-6 sm:pl-10 md:pl-12 flex flex-col gap-12">
+        
+        {/* STEP 1 */}
+        <div className="relative group">
+          {/* Circular Step Node */}
+          <div className="absolute -left-[35px] sm:-left-[51px] md:-left-[59px] top-0 w-10 h-10 rounded-2xl bg-surface-1 border-2 border-brand text-brand-light font-black flex items-center justify-center text-sm shadow-glow group-hover:scale-110 transition-transform">
+            1
+          </div>
+
+          <div className="card-glass p-6 border-white/[0.08] group-hover:border-brand/40 transition-all duration-300 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-white">Step 1: Start With Your Idea</h3>
+              <span className="text-[10px] font-extrabold bg-brand/10 text-brand-light px-2.5 py-1 rounded-full border border-brand/30">
+                Natural Language
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Users simply type a natural-language idea. Watch Reelify process your input:
+            </p>
+            <Step1TypingEffect />
+          </div>
+        </div>
+
+        {/* STEP 2 */}
+        <div className="relative group">
+          <div className="absolute -left-[35px] sm:-left-[51px] md:-left-[59px] top-0 w-10 h-10 rounded-2xl bg-surface-1 border-2 border-brand text-brand-light font-black flex items-center justify-center text-sm shadow-glow group-hover:scale-110 transition-transform">
+            2
+          </div>
+
+          <div className="card-glass p-6 border-white/[0.08] group-hover:border-brand/40 transition-all duration-300 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-white">Step 2: AI Prompt Engineering</h3>
+              <span className="text-[10px] font-extrabold bg-brand/10 text-brand-light px-2.5 py-1 rounded-full border border-brand/30">
+                Prompt Analyzer
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Reelify automatically transforms a simple prompt into a structured cinematic breakdown:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
+              {PROMPT_ENGINEERING_CHIPS.map((chip, idx) => (
+                <div key={idx} className="bg-white/[0.02] border border-white/[0.06] p-2.5 rounded-xl flex flex-col gap-1 hover:border-brand/30 transition-all">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <span>{chip.icon}</span>
+                    <span>{chip.label}</span>
+                  </div>
+                  <span className="text-xs font-bold text-white truncate">{chip.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* STEP 3 */}
+        <div className="relative group">
+          <div className="absolute -left-[35px] sm:-left-[51px] md:-left-[59px] top-0 w-10 h-10 rounded-2xl bg-surface-1 border-2 border-brand text-brand-light font-black flex items-center justify-center text-sm shadow-glow group-hover:scale-110 transition-transform">
+            3
+          </div>
+
+          <div className="card-glass p-6 border-white/[0.08] group-hover:border-brand/40 transition-all duration-300 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-white">Step 3: AI Creative Director</h3>
+              <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Active Checklist
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Our dual-engine director automatically plans your script, storyboards, voice tracks, and audio score:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1 font-semibold text-xs">
+              {DIRECTOR_CHECKLIST.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.06] p-2.5 rounded-xl text-slate-200">
+                  <span className="text-emerald-400 font-extrabold text-xs">✓</span>
+                  <span className="text-xs font-bold text-white">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* STEP 4 */}
+        <div className="relative group">
+          <div className="absolute -left-[35px] sm:-left-[51px] md:-left-[59px] top-0 w-10 h-10 rounded-2xl bg-surface-1 border-2 border-brand text-brand-light font-black flex items-center justify-center text-sm shadow-glow group-hover:scale-110 transition-transform">
+            4
+          </div>
+
+          <div className="card-glass p-6 border-white/[0.08] group-hover:border-brand/40 transition-all duration-300 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-white">Step 4: AI Video Rendering</h3>
+              <span className="text-[10px] font-extrabold bg-brand/10 text-brand-light px-2.5 py-1 rounded-full border border-brand/30">
+                Rendering Monitor
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Professional rendering monitor tracks every milestone with automated progress bars:
+            </p>
+
+            <div className="space-y-2 pt-1">
+              {RENDERING_STEPS.map((step, idx) => (
+                <div key={idx} className="bg-black/30 border border-white/[0.05] p-2.5 rounded-xl flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-300 text-[11px]">{step.label}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 sm:w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-brand to-emerald-400 w-full" />
+                    </div>
+                    <span className="text-[10px] font-black text-emerald-400">✓ Completed</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* STEP 5 */}
+        <div className="relative group">
+          <div className="absolute -left-[35px] sm:-left-[51px] md:-left-[59px] top-0 w-10 h-10 rounded-2xl bg-surface-1 border-2 border-brand text-brand-light font-black flex items-center justify-center text-sm shadow-glow group-hover:scale-110 transition-transform">
+            5
+          </div>
+
+          <div className="card-glass p-6 border-white/[0.08] group-hover:border-brand/40 transition-all duration-300 shadow-xl flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-white">Step 5: Export Anywhere</h3>
+              <span className="text-[10px] font-extrabold bg-purple-500/10 text-purple-300 px-2.5 py-1 rounded-full border border-purple-500/30">
+                Multi-Platform Distribution
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Instantly export your final video in native 9:16 aspect ratios optimized for viral social media distribution:
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {EXPORT_PLATFORMS.map((plat, idx) => (
+                <div key={idx} className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/40 p-3.5 rounded-2xl flex flex-col items-center justify-center text-center gap-1.5 transition-all duration-300 hover:scale-105 hover:bg-brand/10">
+                  <span className="text-2xl">{plat.icon}</span>
+                  <span className="text-xs font-black text-white">{plat.name}</span>
+                  <span className="text-[10px] font-bold text-slate-400">{plat.format}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  )
+}
+
+// Why Reelify Section Component (Traditional vs Reelify AI Comparison & Metrics)
+function WhyReelifySection({ onAuth }) {
+  const navigate = useNavigate()
+  const { isAuth } = useAuth()
+
+  const traditionalSteps = [
+    'Write Script',
+    'Record Voice',
+    'Search Stock Footage',
+    'Edit Timeline',
+    'Add Music',
+    'Create Captions',
+    'Render Video'
+  ]
+
+  const reelifySteps = [
+    'Type Prompt',
+    'AI Prompt Engineering',
+    'AI Creative Director',
+    'Storyboard',
+    'Rendering',
+    'Download'
+  ]
+
+  const stats = [
+    { value: '95%', label: 'Time Saved', icon: '⏱️' },
+    { value: '8×', label: 'Faster Workflow', icon: '⚡' },
+    { value: '100%', label: 'AI Assisted', icon: '🤖' },
+    { value: '1 Prompt', label: 'Everything Generated', icon: '✦' }
+  ]
+
+  return (
+    <section className="px-6 py-20 max-w-6xl mx-auto scroll-mt-24 relative">
+      {/* Section Header */}
+      <div className="text-center mb-16">
+        <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-extrabold text-brand-light mb-3 shadow-glow">
+          <span>⚡ Workflow Comparison</span>
+        </div>
+        <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3">
+          Why Reelify?
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed">
+          Traditional editing takes hours. Reelify transforms one prompt into a professional short video within seconds.
+        </p>
+      </div>
+
+      {/* Comparison Cards: Desktop Side-by-Side, Mobile Stacked */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mb-16">
+        
+        {/* LEFT CARD: TRADITIONAL WORKFLOW (Red Accent) */}
+        <div className="card-glass p-6 md:p-8 border-rose-500/25 bg-gradient-to-br from-rose-950/20 via-surface-1 to-surface-0 rounded-3xl relative flex flex-col justify-between shadow-xl group hover:border-rose-500/40 transition-all duration-300">
+          <div>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-rose-500/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 font-extrabold text-lg">
+                  ⏳
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-white">Traditional Video Creation</h3>
+                  <span className="text-[10px] font-extrabold text-rose-400 uppercase tracking-wider">Manual & Time-Consuming</span>
+                </div>
+              </div>
+              <span className="text-xs font-black text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-full border border-rose-500/20">
+                2–4 Hours
+              </span>
+            </div>
+
+            {/* Vertical Workflow List */}
+            <div className="flex flex-col gap-2 mb-6">
+              {traditionalSteps.map((step, idx) => (
+                <div key={idx} className="flex flex-col items-center">
+                  <div className="w-full bg-white/[0.02] border border-rose-500/15 p-3 rounded-xl flex items-center justify-between text-xs text-slate-300">
+                    <span className="font-semibold">{step}</span>
+                    <span className="text-rose-400 font-mono text-[10px]">High Effort</span>
+                  </div>
+                  {idx < traditionalSteps.length - 1 && (
+                    <span className="text-slate-600 text-xs py-0.5 font-bold">↓</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Effort Progress Indicator */}
+          <div className="bg-black/40 border border-rose-500/20 p-4 rounded-2xl flex flex-col gap-2">
+            <div className="flex justify-between items-center text-xs font-extrabold text-slate-300">
+              <span>Estimated Effort & Friction</span>
+              <span className="text-rose-400">High (95% Manual)</span>
+            </div>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-rose-500 to-red-600 w-[95%]" />
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT CARD: REELIFY AI WORKFLOW (Purple Accent & Glow) */}
+        <div className="card-glass p-6 md:p-8 border-brand/50 bg-gradient-to-br from-brand/20 via-purple-950/20 to-surface-0 rounded-3xl relative flex flex-col justify-between shadow-glow-strong group hover:border-brand transition-all duration-300">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-brand/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand to-brand-glow flex items-center justify-center text-white font-black text-lg shadow-glow">
+                  ✨
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Reelify AI</h3>
+                  <span className="text-[10px] font-extrabold text-brand-light uppercase tracking-wider">Automated & Instant</span>
+                </div>
+              </div>
+              <span className="text-xs font-black text-emerald-300 bg-emerald-500/15 px-3 py-1.5 rounded-full border border-emerald-500/40 shadow-glow animate-pulse">
+                ⚡ 30 Seconds
+              </span>
+            </div>
+
+            {/* Vertical Workflow List */}
+            <div className="flex flex-col gap-2 mb-6">
+              {reelifySteps.map((step, idx) => (
+                <div key={idx} className="flex flex-col items-center">
+                  <div className="w-full bg-brand/10 border border-brand/30 p-3 rounded-xl flex items-center justify-between text-xs text-white shadow-sm">
+                    <div className="flex items-center gap-2 font-bold">
+                      <span className="text-emerald-400 font-extrabold text-xs">✓</span>
+                      <span>{step}</span>
+                    </div>
+                    <span className="text-emerald-400 font-mono text-[10px] font-extrabold">Instant AI</span>
+                  </div>
+                  {idx < reelifySteps.length - 1 && (
+                    <span className="text-brand-light text-xs py-0.5 font-bold">↓</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Effort Progress Indicator */}
+          <div className="bg-brand/10 border border-brand/30 p-4 rounded-2xl flex flex-col gap-2">
+            <div className="flex justify-between items-center text-xs font-extrabold text-white">
+              <span>Estimated Effort & Friction</span>
+              <span className="text-emerald-300 font-black">Minimal (1-Click Prompt)</span>
+            </div>
+            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-brand via-purple-400 to-emerald-400 w-[5%]" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* BOTTOM METRICS: 4 STATISTIC CARDS */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="card-glass p-5 border-white/[0.08] hover:border-brand/40 text-center rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all duration-300 hover:scale-105 shadow-lg">
+            <span className="text-2xl mb-1">{stat.icon}</span>
+            <span className="text-2xl md:text-3xl font-black bg-gradient-to-r from-white via-slate-100 to-brand-light bg-clip-text text-transparent">
+              {stat.value}
+            </span>
+            <span className="text-xs font-bold text-slate-400">{stat.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* BOTTOM CTA CARD */}
+      <div className="card-glass p-8 md:p-12 border-brand/30 rounded-3xl text-center relative overflow-hidden shadow-glow-strong">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-brand/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-purple-900/30 rounded-full blur-3xl pointer-events-none" />
+
+        <h3 className="text-2xl md:text-4xl font-black text-white mb-3 tracking-tight">
+          Ready to Create Your First AI Video?
+        </h3>
+        <p className="text-xs md:text-sm text-slate-300 max-w-md mx-auto mb-8 leading-relaxed">
+          Get started with Reelify today for free. Experience the power of 1-click video generation.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button 
+            onClick={() => navigate('/sandbox')}
+            className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-extrabold text-sm px-7 py-3.5 rounded-2xl transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
+          >
+            <span>🧪 Try Sandbox</span>
+            <span className="text-xs">→</span>
+          </button>
+
+          <button 
+            onClick={isAuth ? () => navigate('/studio') : () => onAuth('login')}
+            className="bg-brand hover:bg-brand-dark text-white font-extrabold text-sm px-8 py-3.5 rounded-2xl transition-all duration-300 shadow-glow hover:scale-105 flex items-center gap-2"
+          >
+            <span>✨ Login to Creative Studio</span>
+            <span className="text-xs">→</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function LandingPage({ onAuth }) {
   const navigate = useNavigate()
   const { isAuth } = useAuth()
@@ -289,14 +1043,33 @@ export default function LandingPage({ onAuth }) {
           An AI-Powered platform that turns your prompts into stunning short videos — automatically.
         </p>
 
-        <button 
-          onClick={isAuth ? () => navigate('/generate') : scrollToSandbox}
-          className="bg-white text-black font-extrabold text-sm px-8 py-4 rounded-full hover:bg-slate-200 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-2"
-        >
-          <span>{isAuth ? 'Open Studio Generator AI' : 'Create with Reelify'}</span>
-          <span className="text-xs">→</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <button 
+            onClick={() => navigate('/sandbox')}
+            className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-extrabold text-sm px-7 py-3.5 rounded-2xl transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
+          >
+            <span>🧪 Try Sandbox</span>
+            <span className="text-xs">→</span>
+          </button>
+
+          <button 
+            onClick={isAuth ? () => navigate('/studio') : () => onAuth('login')}
+            className="bg-brand hover:bg-brand-dark text-white font-extrabold text-sm px-8 py-3.5 rounded-2xl transition-all duration-300 shadow-glow hover:scale-105 flex items-center gap-2"
+          >
+            <span>✨ Login to Creative Studio</span>
+            <span className="text-xs">→</span>
+          </button>
+        </div>
       </section>
+
+      {/* ─── ANIMATED PRODUCT SHOWCASE & WORKFLOW DEMO ─── */}
+      <ProductShowcaseSection />
+
+      {/* ─── ANIMATED VERTICAL TIMELINE: HOW REELIFY WORKS ─── */}
+      <HowReelifyWorksSection />
+
+      {/* ─── WORKFLOW COMPARISON & STATS: WHY REELIFY? ─── */}
+      <WhyReelifySection onAuth={onAuth} />
 
       {/* ─── INTERACTIVE SANDBOX: TRY WITH REELIFY ─── */}
       <section id="sandbox-container" className="px-6 mb-28 max-w-4xl mx-auto scroll-mt-24">

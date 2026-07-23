@@ -52,14 +52,24 @@ export default function Dashboard() {
       .catch(() => {})
   }, [token])
 
-  const handleDeleteVideo = async (videoId) => {
-    if (!window.confirm('Are you sure you want to delete this video?')) return
-    try {
-      await axios.delete(`/api/videos/${videoId}`, { headers: { Authorization: `Bearer ${token}` } })
-      setVideos((prev) => prev.filter((v) => v.id !== videoId))
-      toast.success('Video deleted successfully!')
-    } catch (err) {
-      toast.error('Could not delete video')
+  const handleDeleteVideo = async (videoToDelete) => {
+    const title = typeof videoToDelete === 'object' ? videoToDelete.title : 'this video'
+    if (!window.confirm(`Are you sure you want to delete "${title}"?`)) return
+
+    const targetId = typeof videoToDelete === 'object' ? videoToDelete.id : videoToDelete
+
+    if (targetId) {
+      try {
+        await axios.delete(`/api/videos/${targetId}`, { headers: { Authorization: `Bearer ${token}` } })
+        setVideos((prev) => prev.filter((v) => v.id !== targetId))
+        toast.success('Video deleted successfully!')
+      } catch (err) {
+        toast.error('Could not delete video')
+      }
+    } else {
+      // Delete mock item from component state
+      setVideos((prev) => prev.filter((v) => v !== videoToDelete && v.title !== title))
+      toast.success('Video removed from history!')
     }
   }
 

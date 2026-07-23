@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 
 export default function ProfileModal({ onClose }) {
-  const { token, user, logout } = useAuth()
+  const { token, user, logout, updateUser } = useAuth()
 
   const [name, setName] = useState(user?.name || '')
   const [password, setPassword] = useState('')
@@ -27,6 +27,12 @@ export default function ProfileModal({ onClose }) {
         { name: name.trim(), password: password || undefined },
         { headers: { Authorization: `Bearer ${token}` } }
       )
+
+      if (data.user) {
+        updateUser(data.user)
+      } else if (name.trim()) {
+        updateUser({ ...user, name: name.trim() })
+      }
 
       toast.success(data.message || 'Profile updated successfully!', { id: updateToast })
       setPassword('')
