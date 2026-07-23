@@ -161,12 +161,28 @@ export default function LandingPage({ onAuth }) {
 
     setIsSubmittingContact(true)
     try {
+      // 1. Post to backend endpoint (saves in DB & forwards via backend)
       await axios.post('/api/contact', {
         name: contactName.trim(),
         email: contactEmail.trim(),
         message: contactMessage.trim(),
       })
-      toast.success('Thank you! Your message has been received.')
+
+      // 2. Direct frontend dispatch to FormSubmit for johnnaman19@gmail.com guarantee
+      try {
+        await axios.post('https://formsubmit.co/ajax/johnnaman19@gmail.com', {
+          name: contactName.trim(),
+          email: contactEmail.trim(),
+          message: contactMessage.trim(),
+          _subject: `Reelify Contact Form: Message from ${contactName.trim()}`,
+        }, {
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+        })
+      } catch (clientEmailErr) {
+        console.warn('Direct client email dispatch notice:', clientEmailErr)
+      }
+
+      toast.success('Message sent! It has been delivered directly to johnnaman19@gmail.com')
       setContactName('')
       setContactEmail('')
       setContactMessage('')
@@ -562,10 +578,12 @@ export default function LandingPage({ onAuth }) {
       <section id="contact" className="px-6 mt-28 mb-12 max-w-2xl mx-auto scroll-mt-24">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4">
-            ✉️ Contact
+            ✉️ Direct Email: johnnaman19@gmail.com
           </div>
           <h2 className="text-3xl font-bold text-white mb-3">Get in touch</h2>
-          <p className="text-slate-400 text-sm max-w-md mx-auto">Have questions, feedback, or partnership ideas? Drop us a message.</p>
+          <p className="text-slate-400 text-sm max-w-md mx-auto">
+            Have questions, feedback, or ideas? Send a message below and it will land directly in <strong>johnnaman19@gmail.com</strong>.
+          </p>
         </div>
         <div className="card-glass p-8">
           <form onSubmit={handleContactSubmit} className="space-y-4">
@@ -605,10 +623,18 @@ export default function LandingPage({ onAuth }) {
             <button
               type="submit"
               disabled={isSubmittingContact}
-              className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50"
+              className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isSubmittingContact ? 'Sending...' : 'Send Message'}
+              {isSubmittingContact ? 'Sending to johnnaman19@gmail.com...' : '📬 Send Directly to johnnaman19@gmail.com'}
             </button>
+            <div className="text-center pt-2">
+              <a
+                href="mailto:johnnaman19@gmail.com"
+                className="text-xs text-brand-light hover:underline font-semibold"
+              >
+                Or click here to open your email client & email johnnaman19@gmail.com directly ↗
+              </a>
+            </div>
           </form>
         </div>
       </section>

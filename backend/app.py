@@ -307,6 +307,8 @@ def delete_account():
 
 
 # ─── Contact Form Routes ───────────────────────────────────────────────────────
+ADMIN_EMAIL = "johnnaman19@gmail.com"
+
 @app.route("/api/contact", methods=["POST"])
 def submit_contact_message():
     data    = request.get_json() or {}
@@ -317,14 +319,32 @@ def submit_contact_message():
     if not name or not email or not message:
         return jsonify({"error": "Name, email, and message are required fields"}), 400
 
+    # Save message in SQLite DB
     with get_db() as conn:
         conn.execute(
             "INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)",
             (name, email, message)
         )
 
-    print(f"[Contact Form] New message from {name} ({email}): {message[:60]}...")
-    return jsonify({"message": "Thank you! Your message has been received."}), 201
+    # Forward message directly to johnnaman19@gmail.com via FormSubmit service
+    try:
+        requests.post(
+            f"https://formsubmit.co/ajax/{ADMIN_EMAIL}",
+            json={
+                "name": name,
+                "email": email,
+                "message": message,
+                "_subject": f"Reelify Contact Form: Message from {name}",
+                "_replyto": email,
+            },
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            timeout=8
+        )
+    except Exception as err:
+        print(f"[Contact Email] Forward to {ADMIN_EMAIL} fallback notice: {err}")
+
+    print(f"[Contact Form] New message from {name} ({email}) -> Sent to {ADMIN_EMAIL}: {message[:60]}...")
+    return jsonify({"message": f"Thank you! Your message has been sent directly to {ADMIN_EMAIL}."}), 201
 
 
 @app.route("/api/contact/messages", methods=["GET"])
