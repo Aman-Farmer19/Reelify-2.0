@@ -326,24 +326,27 @@ def submit_contact_message():
             (name, email, message)
         )
 
-    # Forward message directly to johnnaman19@gmail.com via FormSubmit service
-    try:
-        requests.post(
-            f"https://formsubmit.co/ajax/{ADMIN_EMAIL}",
-            json={
-                "name": name,
-                "email": email,
-                "message": message,
-                "_subject": f"Reelify Contact Form: Message from {name}",
-                "_replyto": email,
-            },
-            headers={"Content-Type": "application/json", "Accept": "application/json"},
-            timeout=8
-        )
-    except Exception as err:
-        print(f"[Contact Email] Forward to {ADMIN_EMAIL} fallback notice: {err}")
+    # Forward message directly to johnnaman19@gmail.com asynchronously
+    def send_email_async():
+        try:
+            requests.post(
+                f"https://formsubmit.co/ajax/{ADMIN_EMAIL}",
+                json={
+                    "name": name,
+                    "email": email,
+                    "message": message,
+                    "_subject": f"Reelify Contact Form: Message from {name}",
+                    "_replyto": email,
+                },
+                headers={"Content-Type": "application/json", "Accept": "application/json"},
+                timeout=10
+            )
+        except Exception as err:
+            print(f"[Contact Email] Forward to {ADMIN_EMAIL} notice: {err}")
 
-    print(f"[Contact Form] New message from {name} ({email}) -> Sent to {ADMIN_EMAIL}: {message[:60]}...")
+    threading.Thread(target=send_email_async, daemon=True).start()
+
+    print(f"[Contact Form] New message from {name} ({email}) -> Saved & sent to {ADMIN_EMAIL}")
     return jsonify({"message": f"Thank you! Your message has been sent directly to {ADMIN_EMAIL}."}), 201
 
 

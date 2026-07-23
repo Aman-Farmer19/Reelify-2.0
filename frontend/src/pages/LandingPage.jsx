@@ -160,15 +160,22 @@ export default function LandingPage({ onAuth }) {
     }
 
     setIsSubmittingContact(true)
+    let delivered = false
+
+    // 1. Try sending to backend API (saves in DB & dispatches async email)
     try {
-      // 1. Post to backend endpoint (saves in DB & forwards via backend)
       await axios.post('/api/contact', {
         name: contactName.trim(),
         email: contactEmail.trim(),
         message: contactMessage.trim(),
       })
+      delivered = true
+    } catch (err) {
+      console.warn('Backend endpoint unavailable, falling back to direct email service:', err)
+    }
 
-      // 2. Direct frontend dispatch to FormSubmit for johnnaman19@gmail.com guarantee
+    // 2. Direct client-side dispatch to FormSubmit for johnnaman19@gmail.com
+    if (!delivered) {
       try {
         await axios.post('https://formsubmit.co/ajax/johnnaman19@gmail.com', {
           name: contactName.trim(),
@@ -178,19 +185,27 @@ export default function LandingPage({ onAuth }) {
         }, {
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
         })
+        delivered = true
       } catch (clientEmailErr) {
-        console.warn('Direct client email dispatch notice:', clientEmailErr)
+        console.warn('FormSubmit direct dispatch notice:', clientEmailErr)
       }
+    }
 
-      toast.success('Message sent! It has been delivered directly to johnnaman19@gmail.com')
+    if (delivered) {
+      toast.success('Thank you! Your message has been sent directly to johnnaman19@gmail.com')
       setContactName('')
       setContactEmail('')
       setContactMessage('')
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Could not send message. Please try again.')
-    } finally {
-      setIsSubmittingContact(false)
+    } else {
+      // 3. Ultimate fail-safe mailto link
+      const mailtoUrl = `mailto:johnnaman19@gmail.com?subject=Reelify%20Contact%20Form:%20${encodeURIComponent(contactName)}&body=Name:%20${encodeURIComponent(contactName)}%0AEmail:%20${encodeURIComponent(contactEmail)}%0AMessage:%20${encodeURIComponent(contactMessage)}`
+      window.open(mailtoUrl, '_blank')
+      toast.success('Opening your mail client to send message to johnnaman19@gmail.com!')
+      setContactName('')
+      setContactEmail('')
+      setContactMessage('')
     }
+    setIsSubmittingContact(false)
   }
 
   // Scroll to sandbox
