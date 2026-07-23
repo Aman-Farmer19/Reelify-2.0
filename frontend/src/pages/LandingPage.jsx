@@ -593,11 +593,11 @@ export default function LandingPage({ onAuth }) {
       <section id="contact" className="px-6 mt-28 mb-12 max-w-2xl mx-auto scroll-mt-24">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-brand/10 border border-brand/25 rounded-full px-4 py-1.5 text-xs font-bold text-brand-light mb-4">
-            ✉️ Direct Email: johnnaman19@gmail.com
+            ✉️ Contact
           </div>
           <h2 className="text-3xl font-bold text-white mb-3">Get in touch</h2>
           <p className="text-slate-400 text-sm max-w-md mx-auto">
-            Have questions, feedback, or ideas? Send a message below and it will land directly in <strong>johnnaman19@gmail.com</strong>.
+            Have questions, feedback, or partnership ideas? Drop us a message.
           </p>
         </div>
         <div className="card-glass p-8">
@@ -638,18 +638,10 @@ export default function LandingPage({ onAuth }) {
             <button
               type="submit"
               disabled={isSubmittingContact}
-              className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+              className="btn-primary w-full py-3 text-sm font-bold disabled:opacity-50"
             >
-              {isSubmittingContact ? 'Sending to johnnaman19@gmail.com...' : '📬 Send Directly to johnnaman19@gmail.com'}
+              {isSubmittingContact ? 'Sending...' : 'Send Message'}
             </button>
-            <div className="text-center pt-2">
-              <a
-                href="mailto:johnnaman19@gmail.com"
-                className="text-xs text-brand-light hover:underline font-semibold"
-              >
-                Or click here to open your email client & email johnnaman19@gmail.com directly ↗
-              </a>
-            </div>
           </form>
         </div>
       </section>
