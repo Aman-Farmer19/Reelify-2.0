@@ -5,26 +5,26 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#8b5cf6', // Violet
-          glow: '#d946ef',    // Fuchsia Glow
-          dark: '#6d28d9',
-          light: '#c084fc',
+          DEFAULT: '#8B5CF6', // Violet Primary Accent
+          glow: '#A855F7',    // Vibrant Glow
+          dark: '#6D28D9',
+          light: '#C084FC',
         },
         surface: {
-          0: '#0c0420', // Deepest background — visible dark purple
-          1: '#15082e', // Panels — rich violet-indigo
-          2: '#1a0535', // Sub-panels — deep purple
-          3: '#221248', // Cards — muted vivid purple
-          4: '#2a1858', // Hover active cards — lifted purple
+          0: '#090414', // Global Background
+          1: '#12061F', // Cards & Sidebar
+          2: '#160826', // Sub-panels
+          3: '#1F0B36', // Interactive Cards
+          4: '#280F45', // Hover Active Cards
         },
-        border: 'rgba(255, 255, 255, 0.07)',
+        border: 'rgba(139, 92, 246, 0.20)',
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'Outfit', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        glow: '0 0 25px rgba(139, 92, 246, 0.15)',
-        'glow-strong': '0 0 35px rgba(217, 70, 239, 0.3)',
+        glow: '0 0 25px rgba(139, 92, 246, 0.20)',
+        'glow-strong': '0 0 35px rgba(139, 92, 246, 0.35)',
       }
     },
   },

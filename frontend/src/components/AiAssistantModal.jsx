@@ -19,7 +19,7 @@ const predefinedPills = [
 const generatePromptsForWord = (word) => {
   const w = word.trim()
   const capitalized = w.charAt(0).toUpperCase() + w.slice(1)
-  
+
   return [
     {
       id: 1,
@@ -55,7 +55,7 @@ export default function AiAssistantModal({ onClose }) {
   const [options, setOptions] = useState(() => generatePromptsForWord('car'))
   const [activeWord, setActiveWord] = useState('car')
 
-  const handleGenerate = async (wordToUse) => {
+  const generate = async (wordToUse) => {
     const targetWord = (wordToUse || wordInput).trim()
     if (!targetWord) {
       toast.error('Please enter a word or pick a suggestion pill!')
@@ -103,7 +103,7 @@ export default function AiAssistantModal({ onClose }) {
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div 
+      <div
         className="bg-surface-1/95 border border-brand/30 rounded-3xl p-5 md:p-6 max-w-lg w-full relative shadow-2xl animate-fade-in flex flex-col gap-4 max-h-[88vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -133,12 +133,12 @@ export default function AiAssistantModal({ onClose }) {
             type="text"
             value={wordInput}
             onChange={(e) => setWordInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+            onKeyDown={(e) => e.key === 'Enter' && generate()}
             placeholder="Type a word (e.g. puppy, space, car, coffee)..."
             className="input-field text-xs flex-1 py-2.5"
           />
           <button
-            onClick={() => handleGenerate()}
+            onClick={() => generate()}
             disabled={loading}
             className="btn-primary text-xs font-bold px-4 py-2.5 rounded-xl disabled:opacity-50 whitespace-nowrap"
           >
@@ -157,14 +157,13 @@ export default function AiAssistantModal({ onClose }) {
                 key={pill.label}
                 onClick={() => {
                   setWordInput(pill.word)
-                  handleGenerate(pill.word)
+                  generate(pill.word)
                 }}
                 disabled={loading}
-                className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border whitespace-nowrap transition-all ${
-                  activeWord.toLowerCase() === pill.word
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border whitespace-nowrap transition-all ${activeWord.toLowerCase() === pill.word
                     ? 'bg-brand/20 border-brand text-brand-light font-bold'
                     : 'bg-white/[0.03] border-white/[0.06] text-slate-300 hover:text-white hover:border-white/15'
-                }`}
+                  }`}
               >
                 {pill.label}
               </button>

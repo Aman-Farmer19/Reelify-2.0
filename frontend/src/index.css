@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,12 +8,12 @@
   body {
     @apply bg-surface-0 text-slate-100 font-sans antialiased selection:bg-brand/30 selection:text-brand-light;
     background-image: 
-      radial-gradient(ellipse at 15% 10%, rgba(139, 92, 246, 0.22) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 20%, rgba(217, 70, 239, 0.18) 0%, transparent 45%),
-      radial-gradient(ellipse at 50% 50%, rgba(109, 40, 217, 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse at 20% 80%, rgba(192, 132, 252, 0.20) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 90%, rgba(139, 92, 246, 0.22) 0%, transparent 45%),
-      linear-gradient(180deg, #180532 0%, #12072b 40%, #0a031d 100%);
+      radial-gradient(ellipse at 15% 10%, rgba(139, 92, 246, 0.24) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(217, 70, 239, 0.20) 0%, transparent 45%),
+      radial-gradient(ellipse at 50% 50%, rgba(109, 40, 217, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 80%, rgba(192, 132, 252, 0.22) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(139, 92, 246, 0.24) 0%, transparent 45%),
+      linear-gradient(180deg, #16042e 0%, #100628 40%, #080218 100%);
     background-attachment: fixed;
   }
 
@@ -29,19 +29,23 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-brand to-brand-dark text-white font-bold rounded-2xl px-6 py-3 transition-all duration-200 hover:shadow-glow hover:opacity-95 hover:-translate-y-0.5 active:scale-95 border border-brand/30 flex items-center justify-center gap-2;
+    @apply bg-gradient-to-r from-brand via-purple-600 to-brand-glow text-white font-extrabold rounded-2xl px-6 py-3.5 transition-all duration-300 hover:shadow-glow hover:scale-[1.02] active:scale-95 border border-white/20 flex items-center justify-center gap-2 text-xs uppercase tracking-wider;
   }
 
   .btn-secondary {
-    @apply bg-white/[0.04] border border-white/10 text-slate-200 font-bold rounded-2xl px-6 py-3 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 active:scale-95 flex items-center justify-center gap-2;
+    @apply bg-white/[0.04] border border-white/10 text-slate-200 font-extrabold rounded-2xl px-6 py-3.5 transition-all duration-300 hover:bg-white/[0.09] hover:border-white/20 hover:text-white active:scale-95 flex items-center justify-center gap-2 text-xs;
   }
 
   .btn-ghost {
-    @apply border border-white/5 text-slate-400 font-semibold rounded-2xl px-5 py-2.5 transition-all duration-200 hover:border-brand/30 hover:text-brand-light bg-transparent hover:bg-brand/10;
+    @apply border border-white/5 text-slate-400 font-bold rounded-2xl px-5 py-2.5 transition-all duration-200 hover:border-brand/30 hover:text-brand-light bg-transparent hover:bg-brand/10 text-xs;
   }
 
   .card-glass {
-    @apply bg-surface-1/60 backdrop-blur-xl border border-white/[0.07] rounded-3xl shadow-2xl transition-all duration-300;
+    @apply bg-surface-1/50 backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl transition-all duration-300;
+  }
+
+  .card-glass-hover {
+    @apply bg-surface-1/50 backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl hover:border-brand/40 hover:-translate-y-1 transition-all duration-300;
   }
 
   .card-glow {
@@ -50,28 +54,28 @@
   .card-glow::after {
     content: '';
     @apply absolute inset-0 rounded-3xl opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none;
-    background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(139, 92, 246, 0.08), transparent 40%);
+    background: radial-gradient(800px circle at var(--x, 0px) var(--y, 0px), rgba(139, 92, 246, 0.12), transparent 40%);
   }
 
   .input-field {
-    @apply w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3.5 text-slate-100 placeholder-slate-500
-           focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all duration-200;
+    @apply w-full bg-black/40 border border-white/[0.1] rounded-2xl px-4 py-3.5 text-slate-100 placeholder-slate-500
+           focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition-all duration-200 font-medium text-xs;
   }
 
   .section-label {
-    @apply text-xs font-bold text-brand-light uppercase tracking-wider mb-2.5 block;
+    @apply text-xs font-black text-brand-light uppercase tracking-wider mb-2.5 block;
   }
 }
 
-/* Custom scrollbar */
+/* Custom Ultra-Sleek Scrollbars */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.6); }
+::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.6); }
 
 /* Gradient text */
 .gradient-text {
-  @apply bg-gradient-to-r from-white via-slate-100 to-brand-light bg-clip-text text-transparent font-extrabold;
+  @apply bg-gradient-to-r from-white via-slate-100 to-brand-light bg-clip-text text-transparent font-black;
 }
 
 /* Shimmer animation */
@@ -80,7 +84,7 @@
   100% { background-position: 200% 0; }
 }
 .progress-shimmer {
-  background: linear-gradient(90deg, #8b5cf6, #d946ef, #8b5cf6);
+  background: linear-gradient(90deg, #8b5cf6, #d946ef, #10b981, #8b5cf6);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
 }
@@ -101,4 +105,13 @@
 }
 .spin-slow {
   animation: spin-slow 8s infinite linear;
+}
+
+/* Glowing Pulsing Glow */
+.shadow-glow-strong {
+  box-shadow: 0 0 35px -5px rgba(139, 92, 246, 0.35);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px -3px rgba(139, 92, 246, 0.25);
 }

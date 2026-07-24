@@ -874,7 +874,7 @@ function WhyReelifySection({ onAuth }) {
           </button>
 
           <button 
-            onClick={isAuth ? () => navigate('/studio') : () => onAuth('login')}
+            onClick={isAuth ? () => navigate('/studio') : () => navigate('/login')}
             className="bg-brand hover:bg-brand-dark text-white font-extrabold text-sm px-8 py-3.5 rounded-2xl transition-all duration-300 shadow-glow hover:scale-105 flex items-center gap-2"
           >
             <span>✨ Login to Creative Studio</span>
@@ -1043,20 +1043,27 @@ export default function LandingPage({ onAuth }) {
           An AI-Powered platform that turns your prompts into stunning short videos — automatically.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           <button 
             onClick={() => navigate('/sandbox')}
-            className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-extrabold text-sm px-7 py-3.5 rounded-2xl transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
+            className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-extrabold text-sm px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
           >
             <span>🧪 Try Sandbox</span>
             <span className="text-xs">→</span>
           </button>
 
           <button 
-            onClick={isAuth ? () => navigate('/studio') : () => onAuth('login')}
-            className="bg-brand hover:bg-brand-dark text-white font-extrabold text-sm px-8 py-3.5 rounded-2xl transition-all duration-300 shadow-glow hover:scale-105 flex items-center gap-2"
+            onClick={isAuth ? () => navigate('/studio') : () => navigate('/login')}
+            className="bg-white/10 hover:bg-white/15 text-white border border-white/20 font-extrabold text-sm px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
           >
-            <span>✨ Login to Creative Studio</span>
+            <span>🔑 Login</span>
+          </button>
+
+          <button 
+            onClick={isAuth ? () => navigate('/studio') : () => navigate('/login?tab=signup')}
+            className="bg-brand hover:bg-brand-dark text-white font-extrabold text-sm px-7 py-3.5 rounded-2xl transition-all duration-300 shadow-glow hover:scale-105 flex items-center gap-2"
+          >
+            <span>✨ Create Account</span>
             <span className="text-xs">→</span>
           </button>
         </div>

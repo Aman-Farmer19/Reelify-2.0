@@ -1,45 +1,87 @@
 import React from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { AiAssistantProvider } from './context/AiAssistantContext'
 import Navbar from './components/Navbar'
-import LandingPage from './pages/LandingPage'
-import Dashboard from './pages/Dashboard'
-import History from './pages/History'
-import Generator from './pages/Generator'
-import AuthModal from './components/AuthModal'
-import AiAssistantDrawer from './components/AiAssistantDrawer'
-import { useState } from 'react'
+import AppLayout from './layouts/AppLayout'
 
-function RequireAuthToGenerate({ onAuth }) {
-  React.useEffect(() => {
-    onAuth('signup')
-  }, [onAuth])
-  return <Navigate to="/" replace />
+import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
+import CreativeStudio from "./pages/CreativeStudio"
+import SandboxPage from './pages/SandboxPage'
+
+import Dashboard from './pages/Dashboard'
+import ProjectsPage from './pages/ProjectsPage'
+import AssetLibraryPage from './pages/AssetLibraryPage'
+import AnalyticsPage from './pages/AnalyticsPage'
+import PromptLibraryPage from './pages/PromptLibraryPage'
+import History from './pages/History'
+import TemplatesPage from './pages/TemplatesPage'
+import SettingsPage from './pages/SettingsPage'
+import ProfilePage from './pages/ProfilePage'
+import AiAssistantDrawer from './components/AiAssistantDrawer'
+
+function RequireAuth({ children }) {
+  const { isAuth } = useAuth()
+  return isAuth ? children : <Navigate to="/login" replace />
+}
+
+function PublicLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      {children}
+    </>
+  )
 }
 
 function AppRoutes() {
   const { isAuth } = useAuth()
-  const [authModal, setAuthModal] = useState(null)
+  const location = useLocation()
+
+  // Public pages use Navbar, /app pages do NOT use Navbar
+  const isAppRoute = location.pathname.startsWith('/app')
 
   return (
     <>
-      <Navbar onAuth={setAuthModal} />
+      {!isAppRoute && <Navbar />}
       <AiAssistantDrawer />
-      {authModal && (
-        <AuthModal
-          mode={authModal}
-          onClose={() => setAuthModal(null)}
-          onSwitch={(m) => setAuthModal(m)}
-        />
-      )}
       <Routes>
-        <Route path="/" element={<LandingPage onAuth={setAuthModal} />} />
-        <Route path="/sandbox" element={<Generator mode="sandbox" onAuth={setAuthModal} />} />
-        <Route path="/studio" element={isAuth ? <Generator mode="studio" onAuth={setAuthModal} /> : <Navigate to="/sandbox" replace />} />
-        <Route path="/generate" element={<Navigate to={isAuth ? "/studio" : "/sandbox"} replace />} />
-        <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Navigate to="/" replace />} />
-        <Route path="/history" element={isAuth ? <History /> : <Navigate to="/" replace />} />
+        {/* PUBLIC MARKETING ROUTES */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/features" element={<LandingPage />} />
+        <Route path="/pricing" element={<LandingPage />} />
+        <Route path="/sandbox" element={<SandboxPage />} />
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* AUTHENTICATED APP ROUTES */}
+        <Route
+          path="/app"
+          element={
+            <RequireAuth>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="studio" element={<CreativeStudio />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="assets" element={<AssetLibraryPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="prompts" element={<PromptLibraryPage />} />
+          <Route path="history" element={<History />} />
+          <Route path="templates" element={<TemplatesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+        </Route>
+
+        {/* LEGACY REDIRECTS */}
+        <Route path="/dashboard" element={<Navigate to="/app" replace />} />
+        <Route path="/studio" element={<Navigate to="/app/studio" replace />} />
+        <Route path="/generate" element={<Navigate to={isAuth ? "/app/studio" : "/sandbox"} replace />} />
+        <Route path="/history" element={<Navigate to="/app/history" replace />} />
+
+        {/* CATCH ALL */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

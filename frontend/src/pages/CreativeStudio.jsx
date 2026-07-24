@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useAiAssistant } from '../context/AiAssistantContext'
 import Sidebar from '../components/Sidebar'
+import SandboxWorkspace from '../components/SandboxWorkspace'
 
 const DURATION_OPTIONS = ['15 seconds', '30 seconds', '60 seconds', '90 seconds']
 const FORMAT_OPTIONS = ['9:16 (Reels/Shorts)', '16:9 (YouTube)', '1:1 (Feed Post)']
@@ -14,10 +15,12 @@ const MUSIC_OPTIONS = ['Upbeat Electronic', 'Cinematic Epic', 'Lo-Fi Chill', 'Co
 const CAPTION_OPTIONS = ['Animated Bold', 'Clean White', 'Neon Glow', 'None']
 
 const QUICK_TEMPLATES = [
-  { label: '🐶 Puppy Running', prompt: 'Create a 15 second video of a fluffy golden retriever puppy running happily on the grass in a sunny park.' },
-  { label: '💻 Cyberpunk Workspace', prompt: 'A coding laptop sitting on a clean desk with neon purple backlighting, code lines scrolling on screen, dynamic style.' },
-  { label: '🍳 Master Chef Cooking', prompt: 'A close up cinematic shot of a professional chef chopping colorful vegetables on a wooden cutting board in a high-end kitchen.' },
-  { label: '🏖 Sunset Ocean', prompt: 'Beautiful aerial view of blue ocean waves gently crashing onto a sandy beach at sunset, cinematic travel style.' },
+  { icon: '🐶', label: 'Puppy Running', prompt: 'Create a 15 second video of a fluffy golden retriever puppy running happily on the grass in a sunny park.' },
+  { icon: '🌊', label: 'Sunset Ocean', prompt: 'Beautiful aerial view of blue ocean waves gently crashing onto a sandy beach at sunset, cinematic travel style.' },
+  { icon: '🚀', label: 'Space Documentary', prompt: 'Cinematic space documentary footage of deep space nebula, starfields, and distant rotating planets in 8k.' },
+  { icon: '☕', label: 'Luxury Coffee Ad', prompt: 'A cinematic luxury coffee commercial with slow-motion pouring shots, warm lighting, premium music and elegant transitions.' },
+  { icon: '🎮', label: 'Gaming Montage', prompt: 'Fast-paced esports gaming montage with glowing neon overlays, intense bass drop audio, and dramatic kills.' },
+  { icon: '🏝', label: 'Travel Reel', prompt: 'Serene travel vlog reel over tropical island beaches with turquoise water, palm trees, and warm ambient music.' },
 ]
 
 const PIPELINE_STEPS = [
@@ -208,11 +211,10 @@ function PromptQualityAnalyzer({ prompt, onApplySuggestion }) {
             {/* Progress Bar */}
             <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  m.detected
-                    ? 'bg-gradient-to-r from-brand to-brand-glow shadow-glow'
-                    : 'bg-slate-700/50'
-                }`}
+                className={`h-full rounded-full transition-all duration-500 ${m.detected
+                  ? 'bg-gradient-to-r from-brand to-brand-glow shadow-glow'
+                  : 'bg-slate-700/50'
+                  }`}
                 style={{ width: `${m.score}%` }}
               />
             </div>
@@ -246,6 +248,10 @@ function PromptQualityAnalyzer({ prompt, onApplySuggestion }) {
 }
 
 // Live AI Typing Suggestions Component
+import CinematicRenderingOverlay from '../components/CinematicRenderingOverlay'
+import GenerationSuccessModal from '../components/GenerationSuccessModal'
+import InteractiveStoryboardTimeline from '../components/InteractiveStoryboardTimeline'
+import ExportCenterModal from '../components/ExportCenterModal'
 function LiveTypingSuggestions({ prompt, onSelectSuggestion }) {
   const p = (prompt || '').toLowerCase()
 
@@ -325,14 +331,14 @@ function RunwayTechnicalSpecs({ form, phase, progress }) {
   const resolutionText = form.format.includes('9:16')
     ? '1080 x 1920 (9:16 Vertical)'
     : form.format.includes('16:9')
-    ? '1920 x 1080 (16:9 Landscape)'
-    : '1080 x 1080 (1:1 Square)'
+      ? '1920 x 1080 (16:9 Landscape)'
+      : '1080 x 1080 (1:1 Square)'
 
   const estRenderTime = phase === 'generating'
     ? `⚡ ~${Math.max(1, Math.ceil((100 - progress) / 8))}s remaining`
     : phase === 'done'
-    ? '⚡ 2.4s (Render Complete)'
-    : '⚡ Standby'
+      ? '⚡ 2.4s (Render Complete)'
+      : '⚡ Standby'
 
   return (
     <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
@@ -469,11 +475,10 @@ function ExportStudioPanel({ compiledVideoUrl, downloadUrl }) {
               key={f.id}
               type="button"
               onClick={() => setFormat(f.id)}
-              className={`p-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
-                format === f.id
-                  ? 'bg-brand text-white border-brand shadow-glow'
-                  : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06]'
-              }`}
+              className={`p-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${format === f.id
+                ? 'bg-brand text-white border-brand shadow-glow'
+                : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06]'
+                }`}
             >
               <span>{f.icon}</span>
               <span className="truncate">{f.label}</span>
@@ -579,18 +584,10 @@ function ExportStudioPanel({ compiledVideoUrl, downloadUrl }) {
 
         <button
           type="button"
-          onClick={handleExport}
-          disabled={isExporting}
+          onClick={() => setShowExportCenterModal(true)}
           className="btn-primary text-xs font-bold py-3.5 rounded-xl w-full flex items-center justify-center gap-2 shadow-glow active:scale-95 disabled:opacity-50"
         >
-          {isExporting ? (
-            <>
-              <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-              <span>Packaging Export ({exportProgress}%)...</span>
-            </>
-          ) : (
-            `📦 Generate Export (${format})`
-          )}
+          <span>⚡ Open Pro Export Center</span>
         </button>
       </div>
     </div>
@@ -683,6 +680,8 @@ function PromptBreakdownPanel({ prompt, form, onAssemblePrompt }) {
 
 // Locked Feature Card Component for Sandbox Mode
 function LockedFeatureCard({ title, description, onAuth }) {
+  const navigate = useNavigate()
+
   return (
     <div className="card-glass p-5 border-amber-500/25 bg-gradient-to-br from-white/[0.02] via-amber-500/[0.03] to-purple-900/[0.05] rounded-2xl flex flex-col gap-3 shadow-lg relative overflow-hidden transition-all duration-300 hover:border-amber-500/40">
       <div className="flex items-center justify-between">
@@ -708,7 +707,7 @@ function LockedFeatureCard({ title, description, onAuth }) {
         <span className="text-[10px] text-slate-400 font-semibold">Sign in to unlock full Reelify platform</span>
         <button
           type="button"
-          onClick={() => onAuth && onAuth('login')}
+          onClick={() => navigate('/login')}
           className="btn-primary text-xs font-bold px-4 py-2 rounded-xl shadow-glow hover:scale-105 transition-all"
         >
           Login
@@ -718,7 +717,10 @@ function LockedFeatureCard({ title, description, onAuth }) {
   )
 }
 
-export default function Generator({ onAuth }) {
+export default function CreativeStudio({
+  mode = "studio",
+  onAuth,
+}) {
   const { token, isAuth } = useAuth()
   const location = useLocation()
 
@@ -741,7 +743,7 @@ export default function Generator({ onAuth }) {
   const [activeStep, setActiveStep] = useState('')
   const [doneSteps, setDoneSteps] = useState([])
   const [result, setResult] = useState(null)
-  
+
   // Voice state
   const [isListening, setIsListening] = useState(false)
 
@@ -760,6 +762,7 @@ export default function Generator({ onAuth }) {
   // AI image slideshow states
   const [slideshowImages, setSlideshowImages] = useState([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  const [showExportCenterModal, setShowExportCenterModal] = useState(false)
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -813,7 +816,7 @@ export default function Generator({ onAuth }) {
     })
     toast.success(`AI Director preset set to ${director.name}!`)
   }
-  
+
   const { registerInsertCallback } = useAiAssistant()
 
   // Register live prompt insertion callback from AI Copilot drawer
@@ -837,8 +840,8 @@ export default function Generator({ onAuth }) {
       const suggested = localStorage.getItem('reelify_ai_suggested_prompt')
       const style = localStorage.getItem('reelify_ai_suggested_style')
       if (suggested) {
-        setForm(prev => ({ 
-          ...prev, 
+        setForm(prev => ({
+          ...prev,
           prompt: suggested,
           style: style || prev.style
         }))
@@ -865,7 +868,7 @@ export default function Generator({ onAuth }) {
     if (isListening && recognitionRef.current) {
       try {
         recognitionRef.current.stop()
-      } catch (err) {}
+      } catch (err) { }
       setIsListening(false)
       toast('Voice assistant stopped', { icon: '🛑' })
       return
@@ -1034,7 +1037,7 @@ export default function Generator({ onAuth }) {
       )
       scenesList = sbRes.data.scenes || []
       setStoryboardScenes(scenesList)
-      
+
       const imageUrls = scenesList.map(s => s.image_url)
       if (imageUrls.length > 0) {
         setSlideshowImages(imageUrls)
@@ -1046,7 +1049,7 @@ export default function Generator({ onAuth }) {
     if (slideshowImages.length === 0 && (!scenesList || scenesList.length === 0)) {
       const queryWords = form.prompt.split(' ').filter(w => w.length > 3).slice(0, 4)
       const queries = queryWords.length >= 2 ? queryWords : ['creative', 'art', 'reels', 'concept']
-      const urls = queries.map((q, idx) => 
+      const urls = queries.map((q, idx) =>
         `/api/generate_image?prompt=${encodeURIComponent(form.prompt + ' ' + q)}&seed=${idx + 42}`
       )
       setSlideshowImages(urls)
@@ -1178,6 +1181,10 @@ export default function Generator({ onAuth }) {
     }
   }
 
+  // Project Name state
+  const [projectName, setProjectName] = useState('Untitled AI Reel #1')
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+
   const reset = () => {
     setPhase('idle')
     setProgress(0)
@@ -1192,705 +1199,913 @@ export default function Generator({ onAuth }) {
     setCompiledVideoUrl(null)
   }
 
+  if (mode === 'sandbox') {
+    return (
+      <div className="bg-surface-0 min-h-screen">
+        <SandboxWorkspace
+          form={form}
+          setForm={setForm}
+          phase={phase}
+          progress={progress}
+          doneSteps={doneSteps}
+          activeStep={activeStep}
+          result={result}
+          guestDemoCount={guestDemoCount}
+          slideshowImages={slideshowImages}
+          currentSlideIndex={currentSlideIndex}
+          compiledVideoUrl={compiledVideoUrl}
+          generate={generate}
+          handleCompileVideo={handleCompileVideo}
+          isCompiling={isCompiling}
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-[calc(100vh-77px)] bg-surface-0">
-      <Sidebar />
-      
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-        {/* Top Banner (Sandbox vs Creative Studio) */}
-        {!isAuth ? (
-          <div className="max-w-6xl mx-auto mb-6 bg-gradient-to-r from-amber-500/15 via-brand/15 to-purple-600/15 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg backdrop-blur-xl animate-fade-in">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-extrabold text-lg shadow-inner flex-shrink-0">
-                🧪
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-white uppercase tracking-wider">Sandbox Mode</span>
-                  <span className="text-[10px] font-extrabold bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40">
-                    Guest Demo ({guestDemoCount} / 1 Demo Used)
-                  </span>
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-77px)] bg-surface-0 overflow-x-hidden relative">
+
+      {/* CINEMATIC FULLSCREEN RENDERING OVERLAY */}
+      {phase === 'generating' && (
+        <CinematicRenderingOverlay
+          progress={progress}
+          onCancel={reset}
+        />
+      )}
+
+      {/* GENERATION SUCCESS MODAL OVERLAY */}
+      {phase === 'done' && (
+        <GenerationSuccessModal
+          result={result}
+          compiledVideoUrl={compiledVideoUrl}
+          onCreateAnother={reset}
+        />
+      )}
+
+      {/* EXPORT CENTER MODAL */}
+      {showExportCenterModal && (
+        <ExportCenterModal
+          onClose={() => setShowExportCenterModal(false)}
+          projectTitle={form.prompt ? form.prompt.slice(0, 30) + '...' : 'Future of AI Video'}
+        />
+      )}
+
+      {/* CENTER SCROLLABLE CREATIVE WORKSPACE */}
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 min-w-0">
+
+        {/* WORKSPACE HEADER */}
+        <div className="space-y-1.5">
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+            Create Your Next AI Video
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 max-w-xl leading-relaxed">
+            Describe your idea and let Reelify generate script, storyboard, visuals and voice automatically.
+          </p>
+        </div>
+
+        {/* HERO PROMPT EDITOR CARD */}
+        <div className="card-glass p-6 md:p-8 border-brand/30 rounded-3xl space-y-4 shadow-glow-strong relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex items-center justify-between">
+            <label className="section-label mb-0 text-white font-extrabold flex items-center gap-2">
+              <span>✍️ AI Video Prompt</span>
+            </label>
+            <div className="flex items-center gap-3 text-xs font-bold text-slate-400">
+              <span className="flex items-center gap-1.5 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-[10px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                Auto-saving
+              </span>
+              <span className="text-[11px] text-slate-400">{form.prompt.length} / 500 chars</span>
+            </div>
+          </div>
+
+          <div className="relative">
+            <textarea
+              name="prompt"
+              value={form.prompt}
+              onChange={handleChange}
+              rows={5}
+              disabled={phase === 'generating'}
+              placeholder="A cinematic luxury coffee commercial with slow-motion pouring shots, warm lighting, premium music and elegant transitions."
+              className="input-field resize-none text-sm p-4 pr-14 font-medium leading-relaxed rounded-2xl bg-black/50 border-white/10 focus:border-brand"
+            />
+            {/* Voice microphone button */}
+            <button
+              type="button"
+              onClick={handleVoiceInput}
+              disabled={phase === 'generating'}
+              className={`absolute right-4 bottom-4 w-10 h-10 rounded-xl flex items-center justify-center border transition-all ${isListening
+                ? 'bg-brand-glow border-brand-glow text-white shadow-glow animate-pulse'
+                : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white hover:border-brand/30'
+                }`}
+              title={isListening ? "Stop listening" : "Speak prompt with Voice Assistant"}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Live AI Typing Suggestions */}
+          <LiveTypingSuggestions
+            prompt={form.prompt}
+            onSelectSuggestion={(textToInsert) => {
+              setForm(prev => ({
+                ...prev,
+                prompt: prev.prompt ? `${prev.prompt.trim()} ${textToInsert}.` : `${textToInsert}.`
+              }))
+              toast.success('Inserted AI suggestion into prompt!')
+            }}
+          />
+
+          {/* AI Prompt Quality Analyzer */}
+          <PromptQualityAnalyzer
+            prompt={form.prompt}
+            onApplySuggestion={(sugText) => {
+              setForm(prev => ({
+                ...prev,
+                prompt: prev.prompt ? `${prev.prompt.trim()} ${sugText}.` : `${sugText}.`
+              }))
+              toast.success('Applied AI suggestion to prompt!')
+            }}
+          />
+
+          {/* Prompt Breakdown Matrix */}
+          <PromptBreakdownPanel
+            prompt={form.prompt}
+            form={form}
+            onAssemblePrompt={(assembled) => {
+              setForm(prev => ({ ...prev, prompt: assembled }))
+              toast.success('Re-assembled prompt from breakdown matrix!')
+            }}
+          />
+        </div>
+
+        {/* QUICK TEMPLATES CARDS GRID */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="section-label mb-0 text-white font-extrabold">✨ Quick Templates</label>
+            <span className="text-[10px] text-slate-400 font-bold">1-Click Auto Fill</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {QUICK_TEMPLATES.map((tmpl) => (
+              <button
+                key={tmpl.label}
+                onClick={() => handleTemplateClick(tmpl.prompt)}
+                disabled={phase === 'generating'}
+                className="bg-white/[0.02] hover:bg-brand/20 border border-white/[0.06] hover:border-brand/40 p-3.5 rounded-2xl text-left transition-all duration-300 flex flex-col justify-between gap-2 group hover:-translate-y-1 shadow-lg"
+              >
+                <div className="w-8 h-8 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-base shadow-inner group-hover:scale-110 transition-transform">
+                  {tmpl.icon}
                 </div>
-                <p className="text-xs text-slate-300 mt-1 leading-normal">
-                  Explore Reelify before creating an account. Advanced AI features are available after login.
-                </p>
-              </div>
-            </div>
+                <span className="text-xs font-black text-white group-hover:text-brand-light transition-colors truncate">
+                  {tmpl.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+        {/* INTERACTIVE STORYBOARD TIMELINE */}
+        <InteractiveStoryboardTimeline />
+
+        {/* PRIMARY GENERATE ACTION BUTTON */}
+        <div className="pt-2">
+          <button
+            onClick={generate}
+            disabled={phase === 'generating'}
+            className="btn-primary w-full py-4 text-sm font-black rounded-2xl shadow-glow hover:scale-[1.01] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+          >
+            {phase === 'generating' ? (
+              <>
+                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Generating Pipeline ({progress}%)...</span>
+              </>
+            ) : (
+              '✨ Generate AI Video'
+            )}
+          </button>
+
+          <p className="text-[11px] font-extrabold text-slate-400 text-center mt-2.5 flex items-center justify-center gap-3">
+            <span>⏱️ Estimated ~15 seconds</span>
+            <span>•</span>
+            <span>💎 10 Credits Required</span>
+          </p>
+        </div>
+
+        {/* Visual Match Mode selector */}
+          <div>
+            <label className="section-label">Visual Match Mode</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
-                onClick={() => onAuth && onAuth('login')}
-                className="btn-secondary text-xs font-bold px-4 py-2.5 rounded-xl whitespace-nowrap"
+                onClick={() => setForm({ ...form, visualMode: 'stock' })}
+                disabled={phase === 'generating'}
+                className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${form.visualMode === 'stock'
+                  ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                  : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                  }`}
               >
-                Login
+                🎥 HD Stock Video Match
+                <span className="text-[10px] font-medium opacity-70">Pexels 9:16 Vertical HD</span>
               </button>
               <button
-                onClick={() => onAuth && onAuth('signup')}
-                className="btn-primary text-xs font-extrabold px-5 py-2.5 rounded-xl shadow-glow whitespace-nowrap"
+                onClick={() => setForm({ ...form, visualMode: 'upload' })}
+                disabled={phase === 'generating'}
+                className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${form.visualMode === 'upload'
+                  ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
+                  : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
+                  }`}
               >
-                ✨ Login to Creative Studio
+                📁 Canva / Custom Upload
+                <span className="text-[10px] font-medium opacity-70">Upload your own videos</span>
               </button>
             </div>
           </div>
-        ) : (
-          <div className="max-w-6xl mx-auto mb-6 bg-gradient-to-r from-brand/20 via-purple-600/15 to-brand-glow/20 border border-brand/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-glow animate-fade-in">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-brand to-brand-glow flex items-center justify-center text-white text-lg font-extrabold shadow-glow flex-shrink-0">
-                ✨
-              </div>
-              <div>
-                <h2 className="text-sm font-extrabold text-white">
-                  Creative Studio Unlocked
-                </h2>
-                <p className="text-xs text-slate-300 mt-0.5 leading-normal">
-                  Welcome to Reelify Creative Studio. Every AI Director preset, Storyboard, Export Studio, and AI Copilot is fully active.
-                </p>
+
+          {/* Canva/Local Upload Form UI */}
+          {form.visualMode === 'upload' && (
+            <div className="bg-white/[0.02] border border-white/[0.08] p-4 rounded-2xl flex flex-col gap-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Upload Canva Video / Image Export
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="video/*,image/*"
+                  onChange={handleAssetUpload}
+                  disabled={phase === 'generating'}
+                  className="hidden"
+                  id="canva-asset-upload"
+                />
+                <label
+                  htmlFor="canva-asset-upload"
+                  className="bg-white/[0.04] hover:bg-brand/10 hover:border-brand/30 border border-white/10 text-slate-300 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all"
+                >
+                  Choose file
+                </label>
+                <span className="text-xs text-slate-500 truncate max-w-[200px]">
+                  {uploadedFileName || 'No file selected'}
+                </span>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
-          
-          {/* Left Panel: Settings & Pipeline */}
-          <div className="flex-1 flex flex-col gap-6">
+          {/* Parameter Settings Grid (Duration, Format, Voice, Music, Captions) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { name: 'duration', label: 'Duration', opts: DURATION_OPTIONS },
+              { name: 'format', label: 'Format', opts: FORMAT_OPTIONS },
+              { name: 'voice', label: 'Voice (edge-tts)', opts: VOICE_OPTIONS },
+              { name: 'music', label: 'Music (Jamendo)', opts: MUSIC_OPTIONS },
+              { name: 'captions', label: 'Captions', opts: CAPTION_OPTIONS },
+            ].map(({ name, label, opts }) => (
+              <div key={name} className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</label>
+                <select
+                  name={name}
+                  value={form[name]}
+                  onChange={handleChange}
+                  disabled={phase === 'generating'}
+                  className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand transition-colors duration-300"
+                >
+                  {opts.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+
+        {/* SECTION 4: AI CREATIVE DIRECTOR INTERACTIVE CARDS */}
+        <div className="card-glass p-6 flex flex-col gap-5 border-white/[0.08]">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
-                {isAuth ? 'AI Generation Studio' : 'AI Sandbox Studio'}
-              </h1>
-              <p className="text-xs text-slate-400">
-                {isAuth 
-                  ? 'Set your prompt settings and visual preferences. Our AI handles the script, voice, storyboard, and video compilation.'
-                  : 'Test Reelify AI video generation with 1 demo prompt. Sign in to unlock full production tools.'
-                }
+              <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                <span>🎬 AI Creative Director Cards</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Interactive control cards for script, camera angles, studio lighting, voiceover, and audio score.
               </p>
             </div>
+            <span className="text-xs font-black text-brand-light bg-brand/10 border border-brand/30 px-3 py-1 rounded-full">
+              7 Active Cards
+            </span>
+          </div>
 
-            {/* Quick Templates */}
-            <div className="card-glass p-5">
-              <label className="section-label">Quick Templates</label>
-              <div className="flex flex-wrap gap-2">
-                {QUICK_TEMPLATES.map((tmpl) => (
-                  <button
-                    key={tmpl.label}
-                    onClick={() => handleTemplateClick(tmpl.prompt)}
-                    disabled={phase === 'generating'}
-                    className="bg-white/[0.03] hover:bg-brand/15 hover:border-brand/30 border border-white/[0.06] text-slate-300 hover:text-brand-light text-xs font-bold px-3 py-2 rounded-xl transition-all duration-300"
-                  >
-                    {tmpl.label}
-                  </button>
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Card 1: Script */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  📜 <span>Script</span>
+                </span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  {result?.script ? '✓ Generated' : 'Auto-Planned'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug line-clamp-2 italic font-serif">
+                "{result?.script ? result.script.slice(0, 80) : form.prompt ? form.prompt.slice(0, 80) : 'Prompt pending...'}"
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>AI Script Engine</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">Edit Script ➔</span>
               </div>
             </div>
 
-            {/* Input Options Card */}
-            <div className="card-glass p-6 flex flex-col gap-5">
-              <div className="relative">
-                <label className="section-label">Describe your video topic</label>
-                <div className="relative">
-                  <textarea
-                    name="prompt"
-                    value={form.prompt}
-                    onChange={handleChange}
-                    rows={4}
-                    disabled={phase === 'generating'}
-                    placeholder="e.g. A golden retriever puppy playing on the grass..."
-                    className="input-field resize-none text-sm pr-12"
-                  />
-                  {/* Voice microphone button */}
-                  <button
-                    type="button"
-                    onClick={handleVoiceInput}
-                    disabled={phase === 'generating'}
-                    className={`absolute right-3.5 bottom-3.5 w-9 h-9 rounded-xl flex items-center justify-center border transition-all ${
-                      isListening
-                        ? 'bg-brand-glow border-brand-glow text-white shadow-glow animate-pulse'
-                        : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-white hover:border-brand/30'
-                    }`}
-                    title={isListening ? "Stop listening" : "Speak prompt with Voice Assistant"}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                  </button>
+            {/* Card 2: Storyboard */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  🎞️ <span>Storyboard</span>
+                </span>
+                <span className="text-[10px] font-bold text-brand-light bg-brand/10 px-2 py-0.5 rounded-full border border-brand/30">
+                  4 Scenes
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug">
+                Shot list planned: Subject intro ➔ Action tracking ➔ Lens close-up ➔ Product reveal.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>Multi-Scene Plan</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">View Shots ➔</span>
+              </div>
+            </div>
+
+            {/* Card 3: Camera Movement */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  🎥 <span>Camera Lens</span>
+                </span>
+                <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/30">
+                  35mm Cine
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug">
+                Anamorphic depth of field with slow dramatic tracking motion.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>Motion Controls</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">Adjust Lens ➔</span>
+              </div>
+            </div>
+
+            {/* Card 4: Lighting */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  💡 <span>Lighting</span>
+                </span>
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                  Golden Hour
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug">
+                Warm volumetric amber rim lighting with soft directional fill.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>Atmosphere</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">Change Tone ➔</span>
+              </div>
+            </div>
+
+            {/* Card 5: Voiceover */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  🗣️ <span>Voiceover</span>
+                </span>
+                <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  {form.voice}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug">
+                Neural Edge-TTS synthesis with clear audio narration.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>Audio Engine</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">Select Voice ➔</span>
+              </div>
+            </div>
+
+            {/* Card 6: Music Score */}
+            <div className="bg-white/[0.02] border border-white/[0.06] hover:border-brand/30 p-4 rounded-2xl flex flex-col justify-between gap-3 group transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-extrabold text-white flex items-center gap-2">
+                  🎵 <span>Background Music</span>
+                </span>
+                <span className="text-[10px] font-bold text-brand-light bg-brand/10 px-2 py-0.5 rounded-full border border-brand/30">
+                  {form.music}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-snug">
+                Jamendo royalty-free audio score synced to scene changes.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-slate-400 font-bold">
+                <span>Jamendo API</span>
+                <span className="text-brand-light group-hover:translate-x-1 transition-transform">Browse Tracks ➔</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Full AI Director & Camera/Lighting Libraries */}
+          {isAuth ? (
+            <>
+              {/* AI Director Styles Grid */}
+              <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between">
+                  <label className="section-label mb-0">🎬 AI Director Style Presets</label>
+                  <span className="text-[10px] font-bold text-slate-400">
+                    Active Director: <span className="text-brand-light font-extrabold">{form.style}</span>
+                  </span>
                 </div>
 
-                {/* Live AI Typing Suggestions */}
-                <LiveTypingSuggestions
-                  prompt={form.prompt}
-                  onSelectSuggestion={(textToInsert) => {
-                    setForm(prev => ({
-                      ...prev,
-                      prompt: prev.prompt ? `${prev.prompt.trim()} ${textToInsert}.` : `${textToInsert}.`
-                    }))
-                    toast.success('Inserted AI suggestion into prompt!')
-                  }}
-                />
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {AI_DIRECTOR_STYLES.map((director) => {
+                    const isSelected = form.style === director.name
+                    return (
+                      <button
+                        key={director.name}
+                        type="button"
+                        onClick={() => handleDirectorSelect(director)}
+                        disabled={phase === 'generating'}
+                        className={`relative rounded-2xl p-3 border text-left transition-all duration-300 flex flex-col justify-between group overflow-hidden ${isSelected
+                          ? 'bg-gradient-to-tr from-brand/30 via-purple-900/40 to-brand-glow/20 border-brand text-white shadow-glow scale-[1.02]'
+                          : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.05] hover:border-brand/30 hover:-translate-y-0.5'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-lg">{director.icon}</span>
+                          {isSelected && (
+                            <span className="w-2 h-2 rounded-full bg-brand-light shadow-glow animate-ping" />
+                          )}
+                        </div>
 
-                {/* AI Prompt Quality Analyzer */}
-                <PromptQualityAnalyzer
-                  prompt={form.prompt}
-                  onApplySuggestion={(sugText) => {
-                    setForm(prev => ({
-                      ...prev,
-                      prompt: prev.prompt ? `${prev.prompt.trim()} ${sugText}.` : `${sugText}.`
-                    }))
-                    toast.success('Applied AI suggestion to prompt!')
-                  }}
-                />
-
-                {/* Prompt Breakdown Matrix */}
-                <PromptBreakdownPanel
-                  prompt={form.prompt}
-                  form={form}
-                  onAssemblePrompt={(assembled) => {
-                    setForm(prev => ({ ...prev, prompt: assembled }))
-                    toast.success('Re-assembled prompt from breakdown matrix!')
-                  }}
-                />
-              </div>
-
-              {/* Visual Mode selector */}
-              <div>
-                <label className="section-label">Visual Match Mode</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setForm({ ...form, visualMode: 'stock' })}
-                    disabled={phase === 'generating'}
-                    className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
-                      form.visualMode === 'stock'
-                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
-                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    🎥 HD Stock Video Match
-                    <span className="text-[10px] font-medium opacity-70">Pexels 9:16 Vertical HD</span>
-                  </button>
-                  <button
-                    onClick={() => setForm({ ...form, visualMode: 'upload' })}
-                    disabled={phase === 'generating'}
-                    className={`px-4 py-3.5 rounded-2xl text-xs font-bold border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
-                      form.visualMode === 'upload'
-                        ? 'bg-brand/10 border-brand/40 text-brand-light shadow-glow'
-                        : 'bg-white/[0.02] border-white/[0.05] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    📁 Canva / Custom Upload
-                    <span className="text-[10px] font-medium opacity-70">Upload your own videos</span>
-                  </button>
+                        <div>
+                          <div className="text-xs font-black tracking-tight text-white mb-0.5 group-hover:text-brand-light transition-colors">
+                            {director.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 leading-tight">
+                            {director.desc}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Canva/Local Upload Form UI */}
-              {form.visualMode === 'upload' && (
-                <div className="bg-white/[0.02] border border-white/[0.08] p-4 rounded-2xl flex flex-col gap-3">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Upload Canva Video / Image Export
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="video/*,image/*"
-                      onChange={handleAssetUpload}
-                      disabled={phase === 'generating'}
-                      className="hidden"
-                      id="canva-asset-upload"
+              {/* Camera Movement Library */}
+              <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between">
+                  <label className="section-label mb-0">🎥 Camera Movement Library</label>
+                  <span className="text-[10px] text-slate-400 font-bold">Click card to insert camera movement</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {CAMERA_MOVEMENTS.map((cam) => {
+                    const isAlreadyInPrompt = form.prompt.includes(cam.keyword)
+                    return (
+                      <button
+                        key={cam.name}
+                        type="button"
+                        onClick={() => handleCameraSelect(cam)}
+                        disabled={phase === 'generating'}
+                        className={`group relative rounded-xl p-2.5 border text-left transition-all duration-200 flex flex-col justify-between ${isAlreadyInPrompt
+                          ? 'bg-brand/20 border-brand text-brand-light shadow-glow'
+                          : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06] hover:border-brand/30 hover:-translate-y-0.5'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-sm shadow-inner group-hover:border-brand/40 transition-colors">
+                            <span className={`inline-block transition-transform duration-300 ${cam.previewAnim}`}>
+                              {cam.icon}
+                            </span>
+                          </div>
+                          <span className="text-[9px] font-extrabold text-brand-light opacity-0 group-hover:opacity-100 transition-opacity">
+                            + Insert
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-black text-white group-hover:text-brand-light transition-colors">
+                            {cam.name}
+                          </div>
+                          <div className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
+                            {cam.desc}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Lighting Library */}
+              <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between">
+                  <label className="section-label mb-0">💡 Lighting & Atmosphere Library</label>
+                  <span className="text-[10px] text-slate-400 font-bold">Click card to insert lighting setup</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                  {LIGHTING_OPTIONS.map((light) => {
+                    const isAlreadyInPrompt = form.prompt.includes(light.keyword)
+                    return (
+                      <button
+                        key={light.name}
+                        type="button"
+                        onClick={() => handleLightingSelect(light)}
+                        disabled={phase === 'generating'}
+                        className={`group relative rounded-xl p-2.5 border text-left transition-all duration-200 flex flex-col justify-between ${isAlreadyInPrompt
+                          ? 'bg-brand/20 border-brand text-brand-light shadow-glow'
+                          : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06] hover:border-brand/30 hover:-translate-y-0.5'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-sm shadow-inner group-hover:border-brand/40 transition-colors">
+                            <span>{light.icon}</span>
+                          </div>
+                          <span className="text-[9px] font-extrabold text-brand-light opacity-0 group-hover:opacity-100 transition-opacity">
+                            + Insert
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-xs font-black text-white group-hover:text-brand-light transition-colors">
+                            {light.name}
+                          </div>
+                          <div className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
+                            {light.desc}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <LockedFeatureCard
+              title="🎬 AI Creative Director & Cinematic Camera/Lighting Libraries"
+              description="Unlock 9 AI Director style presets, 11 animated camera movement controls, and 10 studio lighting cards by logging into Creative Studio."
+              onAuth={onAuth}
+            />
+          )}
+        </div>
+
+        {/* SECTION 5: STORYBOARD VISUAL SCENE BREAKDOWN */}
+        <div className="card-glass p-6 flex flex-col gap-4 border-white/[0.08]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+              <span>🎞️ Visual Storyboard & Shot List</span>
+            </h2>
+            <span className="text-xs font-bold text-slate-400">4 Scenes Planned</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { id: 1, title: 'Scene 1: Hero Intro', time: '0-3s', camera: '35mm Slow Dolly', desc: 'Subject introduction with warm rim light' },
+              { id: 2, title: 'Scene 2: Action Tracking', time: '3-6s', camera: 'Tracking Shot', desc: 'Dynamic motion following primary subject' },
+              { id: 3, title: 'Scene 3: Lens Close-Up', time: '6-9s', camera: 'Macro Close Push', desc: 'Detailed texture close-up shot' },
+              { id: 4, title: 'Scene 4: Final Reveal', time: '9-15s', camera: 'Orbit Pan', desc: 'Full scene reveal and product showcase' }
+            ].map((shot, idx) => (
+              <div key={shot.id} className="bg-white/[0.02] border border-white/[0.06] p-3.5 rounded-2xl flex flex-col justify-between gap-2.5 relative group hover:border-brand/30 transition-all">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-white">{shot.title}</span>
+                  <span className="text-[9px] font-black text-brand-light bg-brand/10 px-2 py-0.5 rounded-full">
+                    {shot.time}
+                  </span>
+                </div>
+
+                <div className="aspect-video w-full rounded-xl bg-black/40 border border-white/[0.06] overflow-hidden relative flex items-center justify-center">
+                  {slideshowImages[idx] ? (
+                    <img src={slideshowImages[idx]} alt={shot.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center p-2">
+                      <span className="text-slate-600 text-xs font-bold">Scene {idx + 1} Preview</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1 text-[10px]">
+                  <span className="font-bold text-slate-300">📷 {shot.camera}</span>
+                  <span className="text-slate-400 line-clamp-1">{shot.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* SECTION 6: PRIMARY GENERATE ACTION PANEL */}
+        <div className="card-glass p-6 border-brand/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-glow-strong">
+          <div>
+            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+              <span>✨ Ready to Render AI Reel?</span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Generates multi-scene video clips, synthesizes voiceover, and compiles final 9:16 HD MP4.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={generate}
+              disabled={phase === 'generating'}
+              className="btn-primary text-xs font-black py-4 px-8 rounded-2xl w-full sm:w-auto flex items-center justify-center gap-2 shadow-glow hover:scale-105 transition-all duration-300"
+            >
+              {phase === 'generating' ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Generating Pipeline ({progress}%)...</span>
+                </>
+              ) : (
+                '✨ Generate AI Video'
+              )}
+            </button>
+          </div>
+        </div>
+
+      </main>
+
+      {/* COLUMN 3: RIGHT FIXED LIVE PREVIEW & MONITOR PANEL */}
+      <aside className="w-full lg:w-[420px] xl:w-[450px] border-l border-white/[0.06] bg-surface-1/40 p-6 overflow-y-auto space-y-6 flex-shrink-0">
+
+        {/* Real-time Video Render Screen */}
+        <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
+          <label className="section-label">Video Rendering Monitor</label>
+
+          <div className="aspect-[9/16] max-h-[480px] w-full rounded-3xl overflow-hidden bg-black/60 border border-white/10 relative flex items-center justify-center shadow-2xl">
+            {phase === 'idle' && (
+              <div className="text-center p-8 flex flex-col items-center justify-center gap-4 relative z-10">
+                {/* Reelify Logo Watermark */}
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand/30 to-brand-glow/30 border border-brand/40 flex items-center justify-center text-white font-black text-2xl shadow-glow">
+                  R
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white">Waiting for your prompt...</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-[200px] leading-relaxed mx-auto">
+                    Describe your idea and click Generate AI Video to trigger visual playback.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {phase === 'generating' && (
+              <div className="w-full h-full p-5 flex flex-col justify-between z-10 bg-black/80 backdrop-blur-md overflow-y-auto">
+                {/* Header & Estimated Time Remaining */}
+                <div className="flex flex-col gap-2 border-b border-white/10 pb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-brand animate-ping" />
+                      Generation Pipeline
+                    </span>
+                    <span className="text-xs font-black text-brand-light bg-brand/20 px-2 py-0.5 rounded-full border border-brand/40">
+                      {progress}%
+                    </span>
+                  </div>
+
+                  {/* Shimmer Progress Bar */}
+                  <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/10 relative">
+                    <div
+                      className="h-full rounded-full progress-shimmer transition-all duration-300"
+                      style={{ width: `${progress}%` }}
                     />
-                    <label
-                      htmlFor="canva-asset-upload"
-                      className="bg-white/[0.04] hover:bg-brand/10 hover:border-brand/30 border border-white/10 text-slate-300 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all"
-                    >
-                      Choose file
-                    </label>
-                    <span className="text-xs text-slate-500 truncate max-w-[200px]">
-                      {uploadedFileName || 'No file selected'}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                    <span>Executing 11 AI Modules</span>
+                    <span className="text-brand-light font-extrabold">
+                      ⏱️ ~{Math.max(1, Math.ceil((100 - progress) / 8))}s remaining
                     </span>
                   </div>
                 </div>
-              )}
 
-              {/* Parameter Settings Grid (Duration, Format, Voice, Music, Captions) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {[
-                  { name: 'duration', label: 'Duration', opts: DURATION_OPTIONS },
-                  { name: 'format', label: 'Format', opts: FORMAT_OPTIONS },
-                  { name: 'voice', label: 'Voice (edge-tts)', opts: VOICE_OPTIONS },
-                  { name: 'music', label: 'Music (Jamendo)', opts: MUSIC_OPTIONS },
-                  { name: 'captions', label: 'Captions', opts: CAPTION_OPTIONS },
-                ].map(({ name, label, opts }) => (
-                  <div key={name} className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</label>
-                    <select
-                      name={name}
-                      value={form[name]}
-                      onChange={handleChange}
-                      disabled={phase === 'generating'}
-                      className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none focus:border-brand transition-colors duration-300"
-                    >
-                      {opts.map((o) => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
+                {/* 11 Pipeline Steps List */}
+                <div className="flex flex-col gap-1.5 my-3 flex-1 overflow-y-auto pr-1">
+                  {PIPELINE_STEPS.map((step) => {
+                    const isDone = doneSteps.includes(step.id)
+                    const isActive = activeStep === step.id
 
-              {/* AI Director, Camera & Lighting Libraries (Authenticated Only vs Sandbox Lock Card) */}
-              {isAuth ? (
-                <>
-                  {/* AI Director Panel (Replaces Style Dropdown) */}
-                  <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.08]">
-                    <div className="flex items-center justify-between">
-                      <label className="section-label mb-0">🎬 AI Director Preset</label>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        Active Director: <span className="text-brand-light font-extrabold">{form.style}</span>
-                      </span>
-                    </div>
+                    return (
+                      <div
+                        key={step.id}
+                        className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs transition-all duration-200 ${isDone
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                          : isActive
+                            ? 'bg-brand/20 border-brand text-white shadow-glow scale-[1.01]'
+                            : 'bg-white/[0.02] border-white/[0.04] text-slate-600'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{step.icon}</span>
+                          <span className={`font-bold ${isActive ? 'text-white' : ''}`}>
+                            {step.label}
+                          </span>
+                        </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {AI_DIRECTOR_STYLES.map((director) => {
-                        const isSelected = form.style === director.name
-                        return (
-                          <button
-                            key={director.name}
-                            type="button"
-                            onClick={() => handleDirectorSelect(director)}
-                            disabled={phase === 'generating'}
-                            className={`relative rounded-2xl p-3.5 border text-left transition-all duration-300 flex flex-col justify-between group overflow-hidden ${
-                              isSelected
-                                ? 'bg-gradient-to-tr from-brand/30 via-purple-900/40 to-brand-glow/20 border-brand text-white shadow-glow scale-[1.02]'
-                                : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.05] hover:border-brand/30 hover:-translate-y-0.5 hover:shadow-lg'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xl">{director.icon}</span>
-                              {isSelected && (
-                                <span className="w-2.5 h-2.5 rounded-full bg-brand-light shadow-glow animate-ping" />
-                              )}
+                        <div className="flex items-center gap-1.5">
+                          {isDone ? (
+                            <span className="text-emerald-400 font-black text-xs">✓ Done</span>
+                          ) : isActive ? (
+                            <div className="flex items-center gap-1 text-brand-light font-extrabold text-[10px]">
+                              <span className="w-3 h-3 border-2 border-brand-light border-t-transparent rounded-full animate-spin" />
+                              <span>Processing</span>
                             </div>
-
-                            <div>
-                              <div className="text-xs font-black tracking-tight text-white mb-0.5 group-hover:text-brand-light transition-colors">
-                                {director.name}
-                              </div>
-                              <div className="text-[10px] text-slate-400 leading-tight">
-                                {director.desc}
-                              </div>
-                            </div>
-
-                            <div className="mt-2.5 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[9px] font-bold text-slate-400">
-                              <span>{director.lens}</span>
-                              <span className="text-brand-light opacity-0 group-hover:opacity-100 transition-opacity">Select ➔</span>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Camera Movement Library */}
-                  <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
-                    <div className="flex items-center justify-between">
-                      <label className="section-label mb-0">🎥 Camera Movement Library</label>
-                      <span className="text-[10px] text-slate-400 font-bold">Click card to insert camera movement</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                      {CAMERA_MOVEMENTS.map((cam) => {
-                        const isAlreadyInPrompt = form.prompt.includes(cam.keyword)
-                        return (
-                          <button
-                            key={cam.name}
-                            type="button"
-                            onClick={() => handleCameraSelect(cam)}
-                            disabled={phase === 'generating'}
-                            className={`group relative rounded-xl p-2.5 border text-left transition-all duration-200 flex flex-col justify-between ${
-                              isAlreadyInPrompt
-                                ? 'bg-brand/20 border-brand text-brand-light shadow-glow'
-                                : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06] hover:border-brand/30 hover:-translate-y-0.5'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-sm shadow-inner group-hover:border-brand/40 transition-colors">
-                                <span className={`inline-block transition-transform duration-300 ${cam.previewAnim}`}>
-                                  {cam.icon}
-                                </span>
-                              </div>
-                              <span className="text-[9px] font-extrabold text-brand-light opacity-0 group-hover:opacity-100 transition-opacity">
-                                + Insert
-                              </span>
-                            </div>
-
-                            <div>
-                              <div className="text-xs font-black text-white group-hover:text-brand-light transition-colors">
-                                {cam.name}
-                              </div>
-                              <div className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
-                                {cam.desc}
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Lighting Library */}
-                  <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
-                    <div className="flex items-center justify-between">
-                      <label className="section-label mb-0">💡 Lighting & Atmosphere Library</label>
-                      <span className="text-[10px] text-slate-400 font-bold">Click card to insert lighting setup</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-                      {LIGHTING_OPTIONS.map((light) => {
-                        const isAlreadyInPrompt = form.prompt.includes(light.keyword)
-                        return (
-                          <button
-                            key={light.name}
-                            type="button"
-                            onClick={() => handleLightingSelect(light)}
-                            disabled={phase === 'generating'}
-                            className={`group relative rounded-xl p-2.5 border text-left transition-all duration-200 flex flex-col justify-between ${
-                              isAlreadyInPrompt
-                                ? 'bg-brand/20 border-brand text-brand-light shadow-glow'
-                                : 'bg-white/[0.02] border-white/[0.06] text-slate-300 hover:bg-white/[0.06] hover:border-brand/30 hover:-translate-y-0.5'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="w-7 h-7 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center text-sm shadow-inner group-hover:border-brand/40 transition-colors">
-                                <span>{light.icon}</span>
-                              </div>
-                              <span className="text-[9px] font-extrabold text-brand-light opacity-0 group-hover:opacity-100 transition-opacity">
-                                + Insert
-                              </span>
-                            </div>
-
-                            <div>
-                              <div className="text-xs font-black text-white group-hover:text-brand-light transition-colors">
-                                {light.name}
-                              </div>
-                              <div className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-2">
-                                {light.desc}
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <LockedFeatureCard
-                  title="🎬 AI Creative Director & Cinematic Camera/Lighting Libraries"
-                  description="Unlock 9 AI Director style presets, 11 animated camera movement controls, and 10 studio lighting cards by logging into Creative Studio."
-                  onAuth={onAuth}
-                />
-              )}
-
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={generate}
-                  disabled={phase === 'generating' || (form.visualMode === 'upload' && !uploadedFileUrl)}
-                  className="btn-primary text-sm px-6 py-3.5 rounded-2xl flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  ✦ Run Full AI Pipeline
-                </button>
-                {phase === 'done' && (
-                  <button onClick={reset} className="btn-secondary text-sm px-6 py-3.5 rounded-2xl">
-                    Clear Workspace
-                  </button>
-                )}
-              </div>
-            </div>
-
-
-
-            {/* Generated Audio & Voice Preview */}
-            {phase === 'done' && (generatedVoiceUrl || generatedMusicUrl) && (
-              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
-                <label className="section-label">🔊 AI Voice & Background Music Tracks</label>
-                
-                {generatedVoiceUrl && (
-                  <div className="flex flex-col gap-1.5 bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-white">🗣 AI Voiceover ({form.voice})</span>
-                      <span className="text-[9px] text-emerald-400 font-bold uppercase">edge-tts</span>
-                    </div>
-                    <audio controls src={generatedVoiceUrl} className="w-full h-8 mt-1" />
-                  </div>
-                )}
-
-                {generatedMusicUrl && (
-                  <div className="flex flex-col gap-1.5 bg-white/[0.02] p-3 rounded-xl border border-white/[0.05]">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-white">🎵 Background Music ({form.music})</span>
-                      <span className="text-[9px] text-brand-light font-bold uppercase">Jamendo</span>
-                    </div>
-                    <audio controls src={generatedMusicUrl} className="w-full h-8 mt-1" />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Right Panel: Workspace Preview & Compilation */}
-          <div className="w-full lg:w-[450px] flex flex-col gap-6">
-            
-            {/* Real-time Video Render Screen */}
-            <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-4">
-              <label className="section-label">Video Rendering Monitor</label>
-              
-              <div className="aspect-[9/16] max-h-[500px] w-full rounded-2xl overflow-hidden bg-surface-0 border border-white/[0.04] relative flex items-center justify-center shadow-inner">
-                {phase === 'idle' && (
-                  <div className="text-center p-8 flex flex-col items-center gap-3">
-                    <div className="w-14 h-14 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-400 text-xl spin-slow">
-                      ⚙
-                    </div>
-                    <p className="text-xs text-slate-500 font-bold">Studio Screen Offline</p>
-                    <p className="text-[10px] text-slate-600 leading-normal max-w-[200px]">Describe your idea and start generation to trigger visual playback.</p>
-                  </div>
-                )}
-
-                {phase === 'generating' && (
-                  <div className="w-full h-full p-5 flex flex-col justify-between z-10 bg-black/80 backdrop-blur-md overflow-y-auto">
-                    {/* Header & Estimated Time Remaining */}
-                    <div className="flex flex-col gap-2 border-b border-white/10 pb-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-brand animate-ping" />
-                          Generation Pipeline
-                        </span>
-                        <span className="text-xs font-black text-brand-light bg-brand/20 px-2 py-0.5 rounded-full border border-brand/40">
-                          {progress}%
-                        </span>
-                      </div>
-
-                      {/* Shimmer Progress Bar */}
-                      <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/10 relative">
-                        <div
-                          className="h-full rounded-full progress-shimmer transition-all duration-300"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
-                        <span>Executing 11 AI Modules</span>
-                        <span className="text-brand-light font-extrabold">
-                          ⏱️ ~{Math.max(1, Math.ceil((100 - progress) / 8))}s remaining
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 11 Pipeline Steps List */}
-                    <div className="flex flex-col gap-1.5 my-3 flex-1 overflow-y-auto pr-1">
-                      {PIPELINE_STEPS.map((step) => {
-                        const isDone = doneSteps.includes(step.id)
-                        const isActive = activeStep === step.id
-
-                        return (
-                          <div
-                            key={step.id}
-                            className={`flex items-center justify-between px-3 py-1.5 rounded-xl border text-xs transition-all duration-200 ${
-                              isDone
-                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                                : isActive
-                                ? 'bg-brand/20 border-brand text-white shadow-glow scale-[1.01]'
-                                : 'bg-white/[0.02] border-white/[0.04] text-slate-600'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span>{step.icon}</span>
-                              <span className={`font-bold ${isActive ? 'text-white' : ''}`}>
-                                {step.label}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1.5">
-                              {isDone ? (
-                                <span className="text-emerald-400 font-black text-xs">✓ Done</span>
-                              ) : isActive ? (
-                                <div className="flex items-center gap-1 text-brand-light font-extrabold text-[10px]">
-                                  <span className="w-3 h-3 border-2 border-brand-light border-t-transparent rounded-full animate-spin" />
-                                  <span>Processing</span>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] text-slate-600 font-medium">Pending</span>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {phase === 'done' && (
-                  <div className="w-full h-full relative">
-                    {/* Sandbox Watermark Overlay for Guest Users */}
-                    {!isAuth && (
-                      <div className="absolute top-4 right-4 z-30 pointer-events-none bg-black/70 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xl">
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                        <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest">
-                          REELIFY SANDBOX DEMO
-                        </span>
-                      </div>
-                    )}
-
-                    {compiledVideoUrl ? (
-                      <video
-                        src={compiledVideoUrl}
-                        controls
-                        autoPlay
-                        loop
-                        className="w-full h-full object-cover"
-                      />
-                    ) : form.visualMode === 'stock' && result?.download_url ? (
-                      <video
-                        src={result.download_url}
-                        controls
-                        autoPlay
-                        loop
-                        className="w-full h-full object-cover"
-                      />
-                    ) : form.visualMode === 'upload' && result?.download_url ? (
-                      uploadedFileUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
-                        <video
-                          src={result.download_url}
-                          controls
-                          autoPlay
-                          loop
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src={result.download_url}
-                          alt="Custom Canva upload"
-                          className="w-full h-full object-cover"
-                        />
-                      )
-                    ) : (
-                      // AI Image Slideshow Player
-                      <div className="w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
-                        {slideshowImages.map((url, idx) => (
-                          <div
-                            key={url + idx}
-                            className={`absolute inset-0 transition-opacity duration-1000 ${
-                              currentSlideIndex === idx ? 'opacity-100' : 'opacity-0'
-                            }`}
-                          >
-                            <img
-                              src={url}
-                              alt={`slide-${idx}`}
-                              className="w-full h-full object-cover transform scale-105 animate-pulse"
-                              style={{ animationDuration: '4s' }}
-                            />
-                          </div>
-                        ))}
-                        {/* Slide indicators overlay */}
-                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-20">
-                          {slideshowImages.map((_, idx) => (
-                            <span
-                              key={idx}
-                              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                currentSlideIndex === idx ? 'bg-brand w-4' : 'bg-white/30'
-                              }`}
-                            ></span>
-                          ))}
+                          ) : (
+                            <span className="text-[10px] text-slate-600 font-medium">Pending</span>
+                          )}
                         </div>
                       </div>
-                    )}
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
-                    {/* Captions overlay indicator */}
-                    {form.captions !== 'None' && !compiledVideoUrl && (
-                      <div className="absolute bottom-16 left-4 right-4 bg-black/60 backdrop-blur-sm border border-white/5 p-3 rounded-xl text-center text-xs font-bold text-white z-10">
-                        💬 Captions generated — click Compile to burn into MP4
+            {phase === 'done' && (
+              <div className="w-full h-full relative">
+                {/* Sandbox Watermark Overlay for Guest Users */}
+                {!isAuth && (
+                  <div className="absolute top-4 right-4 z-30 pointer-events-none bg-black/70 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xl">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                    <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest">
+                      REELIFY SANDBOX DEMO
+                    </span>
+                  </div>
+                )}
+
+                {compiledVideoUrl ? (
+                  <video
+                    src={compiledVideoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-cover"
+                  />
+                ) : form.visualMode === 'stock' && result?.download_url ? (
+                  <video
+                    src={result.download_url}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-cover"
+                  />
+                ) : form.visualMode === 'upload' && result?.download_url ? (
+                  uploadedFileUrl.toLowerCase().match(/\.(mp4|webm|ogg|mov)$/) ? (
+                    <video
+                      src={result.download_url}
+                      controls
+                      autoPlay
+                      loop
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={result.download_url}
+                      alt="Custom Canva upload"
+                      className="w-full h-full object-cover"
+                    />
+                  )
+                ) : (
+                  // AI Image Slideshow Player
+                  <div className="w-full h-full relative bg-black flex items-center justify-center overflow-hidden">
+                    {slideshowImages.map((url, idx) => (
+                      <div
+                        key={url + idx}
+                        className={`absolute inset-0 transition-opacity duration-1000 ${currentSlideIndex === idx ? 'opacity-100' : 'opacity-0'
+                          }`}
+                      >
+                        <img
+                          src={url}
+                          alt={`slide-${idx}`}
+                          className="w-full h-full object-cover transform scale-105 animate-pulse"
+                          style={{ animationDuration: '4s' }}
+                        />
                       </div>
-                    )}
+                    ))}
+                    {/* Slide indicators overlay */}
+                    <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-20">
+                      {slideshowImages.map((_, idx) => (
+                        <span
+                          key={idx}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${currentSlideIndex === idx ? 'bg-brand w-4' : 'bg-white/30'
+                            }`}
+                        ></span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Captions overlay indicator */}
+                {form.captions !== 'None' && !compiledVideoUrl && (
+                  <div className="absolute bottom-16 left-4 right-4 bg-black/60 backdrop-blur-sm border border-white/5 p-3 rounded-xl text-center text-xs font-bold text-white z-10">
+                    💬 Captions generated — click Compile to burn into MP4
                   </div>
                 )}
               </div>
-
-              {phase === 'done' && (
-                <div className="flex flex-col gap-2">
-                  {compiledVideoUrl ? (
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <a
-                        href={compiledVideoUrl}
-                        download="reelify_video.mp4"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn-primary text-xs font-bold py-3.5 rounded-xl flex-1 flex items-center justify-center gap-2 shadow-glow"
-                      >
-                        📥 Download HD Video
-                      </a>
-                      <button
-                        onClick={() => handleCompileVideo()}
-                        disabled={isCompiling}
-                        className="btn-secondary text-xs font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-1.5"
-                        title="Re-render video with new script or audio edits"
-                      >
-                        ⚡ Re-render
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => handleCompileVideo()}
-                      disabled={isCompiling}
-                      className="btn-primary text-xs font-bold py-3.5 rounded-xl w-full flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isCompiling ? (
-                        <>
-                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                          <span>Compiling Final HD Video...</span>
-                        </>
-                      ) : (
-                        '✨ Render Final Video'
-                      )}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* RunwayML Technical Inspector Panel */}
-            <RunwayTechnicalSpecs form={form} phase={phase} progress={progress} />
-
-            {/* Export Studio Panel (Authenticated vs Locked Sandbox Card) */}
-            {isAuth ? (
-              <ExportStudioPanel compiledVideoUrl={compiledVideoUrl} downloadUrl={result?.download_url} />
-            ) : (
-              <LockedFeatureCard
-                title="📦 Export Studio (MP4, MOV, GIF, TikTok, Shorts)"
-                description="Export high bitrate MP4/MOV videos without watermark, adjust compression algorithms, and export for TikTok & Shorts by logging into Creative Studio."
-                onAuth={onAuth}
-              />
             )}
-
-            {/* Generated Script Editor */}
-            {phase === 'done' && result && (
-              <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-3">
-                <label className="section-label">Interactive Script Editor</label>
-                <textarea
-                  value={editableScript}
-                  onChange={(e) => setEditableScript(e.target.value)}
-                  rows={5}
-                  className="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 text-xs text-slate-300 leading-relaxed focus:outline-none focus:border-brand resize-none"
-                />
-                <button
-                  onClick={() => {
-                    toast.success('Script saved successfully!')
-                    setResult({ ...result, script: editableScript })
-                  }}
-                  className="bg-brand/10 hover:bg-brand/20 border border-brand/20 text-brand-light text-[10px] font-bold py-2 rounded-xl transition-all duration-300"
-                >
-                  Save Script Edits
-                </button>
-              </div>
-            )}
-
           </div>
 
+          {/* BOTTOM PREVIEW METADATA */}
+          <div className="grid grid-cols-4 gap-2 bg-white/[0.02] border border-white/[0.06] p-3 rounded-2xl text-[11px]">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Duration</span>
+              <span className="font-extrabold text-white">{form.duration || '00:30'}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Resolution</span>
+              <span className="font-extrabold text-white">1080x1920</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Aspect</span>
+              <span className="font-extrabold text-brand-light">9:16</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-extrabold text-slate-500 uppercase tracking-wider">Style</span>
+              <span className="font-extrabold text-slate-200 truncate">{form.style || 'Cinematic'}</span>
+            </div>
+          </div>
+
+          {phase === 'done' && (
+            <div className="flex flex-col gap-2">
+              {compiledVideoUrl ? (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <a
+                    href={compiledVideoUrl}
+                    download="reelify_video.mp4"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary text-xs font-bold py-3.5 rounded-xl flex-1 flex items-center justify-center gap-2 shadow-glow"
+                  >
+                    📥 Download HD Video
+                  </a>
+                  <button
+                    onClick={() => handleCompileVideo()}
+                    disabled={isCompiling}
+                    className="btn-secondary text-xs font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-1.5"
+                    title="Re-render video with new script or audio edits"
+                  >
+                    ⚡ Re-render
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleCompileVideo()}
+                  disabled={isCompiling}
+                  className="btn-primary text-xs font-bold py-3.5 rounded-xl w-full flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isCompiling ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span>Compiling Final HD Video...</span>
+                    </>
+                  ) : (
+                    '✨ Render Final Video'
+                  )}
+                </button>
+              )}
+            </div>
+          )}
         </div>
-      </main>
+
+        {/* RunwayML Technical Inspector Panel */}
+        <RunwayTechnicalSpecs form={form} phase={phase} progress={progress} />
+
+        {/* Export Studio Panel (Authenticated vs Locked Sandbox Card) */}
+        {isAuth ? (
+          <ExportStudioPanel compiledVideoUrl={compiledVideoUrl} downloadUrl={result?.download_url} />
+        ) : (
+          <LockedFeatureCard
+            title="📦 Export Studio (MP4, MOV, GIF, TikTok, Shorts)"
+            description="Export high bitrate MP4/MOV videos without watermark, adjust compression algorithms, and export for TikTok & Shorts by logging into Creative Studio."
+            onAuth={onAuth}
+          />
+        )}
+
+        {/* Generated Script Editor */}
+        {phase === 'done' && result && (
+          <div className="card-glass p-5 border-white/[0.06] flex flex-col gap-3">
+            <label className="section-label">Interactive Script Editor</label>
+            <textarea
+              value={editableScript}
+              onChange={(e) => setEditableScript(e.target.value)}
+              rows={5}
+              className="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl p-3 text-xs text-slate-300 leading-relaxed focus:outline-none focus:border-brand resize-none"
+            />
+            <button
+              onClick={() => {
+                toast.success('Script saved successfully!')
+                setResult({ ...result, script: editableScript })
+              }}
+              className="bg-brand/10 hover:bg-brand/20 border border-brand/20 text-brand-light text-[10px] font-bold py-2 rounded-xl transition-all duration-300"
+            >
+              Save Script Edits
+            </button>
+          </div>
+        )}
+
+      </aside>
     </div>
   )
 }

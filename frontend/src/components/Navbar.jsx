@@ -76,31 +76,31 @@ export default function Navbar({ onAuth }) {
           ) : (
             <>
               <Link 
-                to="/dashboard" 
+                to="/app" 
                 className={`text-sm font-semibold transition-colors duration-300 ${
-                  location.pathname === '/dashboard' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
+                  location.pathname === '/app' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 Dashboard
               </Link>
               <Link 
-                to="/studio" 
+                to="/app/studio" 
                 className={`text-sm font-semibold transition-colors duration-300 flex items-center gap-1.5 ${
-                  location.pathname === '/studio' || location.pathname === '/generate' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
+                  location.pathname.startsWith('/app/studio') ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <span>Creative Studio ✨</span>
               </Link>
               <Link 
-                to="/dashboard" 
+                to="/app/projects" 
                 className="text-sm font-semibold text-slate-400 hover:text-white transition-colors duration-300"
               >
                 Projects
               </Link>
               <Link 
-                to="/history" 
+                to="/app/history" 
                 className={`text-sm font-semibold transition-colors duration-300 ${
-                  location.pathname === '/history' ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
+                  location.pathname.startsWith('/app/history') ? 'text-brand-light font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 History
@@ -135,16 +135,16 @@ export default function Navbar({ onAuth }) {
           ) : (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onAuth('login')}
+                onClick={() => navigate('/login')}
                 className="text-sm font-semibold text-slate-300 hover:text-white px-4 py-2.5 rounded-2xl hover:bg-white/[0.03] transition-all"
               >
                 Login
               </button>
               <button
-                onClick={() => onAuth('signup')}
+                onClick={() => navigate('/login?tab=signup')}
                 className="bg-brand text-white text-sm font-bold px-5 py-2.5 rounded-2xl hover:bg-brand-dark shadow-glow transition-all"
               >
-                Sign up free
+                Create Account
               </button>
             </div>
           )}

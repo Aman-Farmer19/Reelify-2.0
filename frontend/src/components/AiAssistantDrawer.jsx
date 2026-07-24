@@ -1071,22 +1071,45 @@ export default function AiAssistantDrawer() {
 
             {/* Input Bar (Only visible in Chat Tab) */}
             {activeTab === 'chat' && (
-              <form onSubmit={onSubmitInput} className="p-4 border-t border-white/[0.08] bg-surface-0/80 flex gap-2">
-                <input
-                  type="text"
-                  value={inputVal}
-                  onChange={(e) => setInputVal(e.target.value)}
-                  placeholder="Type your video idea or ask a question..."
-                  className="input-field text-xs flex-1 py-2.5"
-                />
-                <button
-                  type="submit"
-                  disabled={!inputVal.trim() || isTyping}
-                  className="btn-primary text-xs font-bold px-4 py-2.5 rounded-xl disabled:opacity-50 flex-shrink-0"
-                >
-                  Send ➔
-                </button>
-              </form>
+              <div className="border-t border-white/[0.08] bg-surface-0/80 p-3 space-y-3">
+                {/* ChatGPT + Cursor AI Quick Actions Bar */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {[
+                    { label: '✨ Improve Prompt', prompt: 'Enhance my video prompt with 35mm camera, lighting, and 8k detail.' },
+                    { label: '📝 Script Rewrite', prompt: 'Rewrite my video script for viral retention and Hook-Value-CTA structure.' },
+                    { label: '🎬 Storyboard Gen', prompt: 'Generate a 4-scene visual shot list for my video concept.' },
+                    { label: '💬 Captions', prompt: 'Create bold animated captions for Instagram Reels and Shorts.' },
+                    { label: '🎯 Viral Hooks', prompt: 'Give me 3 viral opening hooks for this video idea.' },
+                    { label: '📢 CTA Ideas', prompt: 'Suggest 3 high-converting calls-to-action for this commercial.' },
+                  ].map((act) => (
+                    <button
+                      key={act.label}
+                      type="button"
+                      onClick={() => handleUserMessage(act.prompt)}
+                      className="bg-white/[0.03] hover:bg-brand/20 border border-white/[0.08] hover:border-brand/40 text-slate-300 hover:text-white text-[10px] font-extrabold px-2.5 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1"
+                    >
+                      {act.label}
+                    </button>
+                  ))}
+                </div>
+
+                <form onSubmit={onSubmitInput} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inputVal}
+                    onChange={(e) => setInputVal(e.target.value)}
+                    placeholder="Ask Reelify Copilot or type a prompt..."
+                    className="input-field text-xs flex-1 py-2.5 rounded-xl bg-black/40 border-white/10"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!inputVal.trim() || isTyping}
+                    className="btn-primary text-xs font-bold px-4 py-2.5 rounded-xl disabled:opacity-50 flex-shrink-0"
+                  >
+                    ✨ Send
+                  </button>
+                </form>
+              </div>
             )}
           </div>
         </div>
