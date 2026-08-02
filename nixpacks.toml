@@ -1,2 +1,8 @@
 [phases.setup]
-nixPkgs = ["ffmpeg"]
+nixPkgs = ["python311", "nodejs_20", "nodePackages.npm"]
+
+[phases.build]
+cmds = ["cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt"]
+
+[start]
+cmd = "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT"
