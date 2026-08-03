@@ -5,3 +5,5 @@ buildCommand = "cd frontend && npm install && npm run build && cd ../backend && 
 [deploy]
 startCommand = "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT"
 healthcheckPath = "/api/health"
+[build]
+builder = "dockerfile"
