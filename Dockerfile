@@ -13,4 +13,5 @@ COPY backend/requirements.txt ./backend/
 RUN pip install -r backend/requirements.txt
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
-CMD cd backend && gunicorn app:app --bind 0.0.0.0:$PORT
+WORKDIR /app/backend
+CMD gunicorn app:app --bind 0.0.0.0:$PORT
