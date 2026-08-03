@@ -12,6 +12,7 @@ WORKDIR /app
 COPY backend/requirements.txt ./backend/
 RUN pip install -r backend/requirements.txt
 COPY backend/ ./backend/
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+# To this (absolute path):
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 WORKDIR /app/backend
 CMD gunicorn app:app --bind 0.0.0.0:$PORT
