@@ -8,6 +8,7 @@ from werkzeug.utils import secure_filename
 from datetime import timedelta, datetime, timezone
 import os
 import sys
+import io
 import asyncio
 import sqlite3
 import secrets
@@ -693,28 +694,21 @@ def stream_video():
         return send_from_directory(DIST_DIR, "demo.mp4")
 
 
-# ─── Generate AI Images (Pollinations fallback) ───────────────────────────────
-@app.route("/api/generate_image")
-def generate_image():
-    prompt = request.args.get("prompt", "abstract art")
-    seed   = request.args.get("seed", "42")
+def make_fallback_jpeg_bytes(title: str = "AI SCENE") -> bytes:
+    try:
+        from PIL import Image, ImageDraw
+        img  = Image.new("RGB", (720, 1280), color=(15, 15, 30))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([0, 600, 720, 680], fill=(139, 92, 246))
+        buf  = io.BytesIO()
+        img.save(buf, format="JPEG", quality=90)
+        return buf.getvalue()
+    except Exception:
+        return b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\x7f\x00\xd9'
 
-    # Helper to generate a valid JPEG binary placeholder using Pillow (never fails FFmpeg)
-    def make_fallback_jpeg_bytes(title: str = "AI SCENE") -> bytes:
-        try:
-            from PIL import Image, ImageDraw
-            img  = Image.new("RGB", (720, 1280), color=(15, 15, 30))
-            draw = ImageDraw.Draw(img)
-            # Draw subtle gradient line
-            draw.rectangle([0, 600, 720, 680], fill=(139, 92, 246))
-            buf  = io.BytesIO()
-            img.save(buf, format="JPEG", quality=90)
-            return buf.getvalue()
-        except Exception:
-            # Minimal 1x1 JPEG byte stream fallback
-            return b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\x7f\x00\xd9'
 
-    # 1. High-speed Pollinations with 4s timeout
+def get_image_bytes(prompt: str, seed: str = "42") -> bytes:
+    """Fetch image bytes directly without internal HTTP loopback call."""
     encoded_prompt   = urllib.parse.quote(prompt)
     pollinations_url = (
         f"https://image.pollinations.ai/prompt/{encoded_prompt}"
@@ -722,14 +716,11 @@ def generate_image():
     )
     try:
         res = requests.get(pollinations_url, timeout=4)
-        if res.status_code == 200 and res.content.startswith(b"\xff\xd8"):  # Valid JPEG header
-            return Response(res.content, mimetype="image/jpeg")
-        elif res.status_code == 200 and b"PNG" in res.content[:10]:
-            return Response(res.content, mimetype="image/png")
+        if res.status_code == 200 and (res.content.startswith(b"\xff\xd8") or b"PNG" in res.content[:10]):
+            return res.content
     except Exception as e:
         print(f"[Pollinations] Timeout/Fail (4s): {e}")
 
-    # 2. Fast Unsplash / Picsum CDN Failover (instant)
     unsplash_urls = [
         "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=720&h=1280&q=80",
         "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=720&h=1280&q=80",
@@ -740,12 +731,22 @@ def generate_image():
         seed_idx = int(seed) % len(unsplash_urls) if str(seed).isdigit() else 0
         u_resp = requests.get(unsplash_urls[seed_idx], timeout=5)
         if u_resp.status_code == 200:
-            return Response(u_resp.content, mimetype="image/jpeg")
+            return u_resp.content
     except Exception as e:
         print(f"[Unsplash CDN] Failover: {e}")
 
-    # 3. Always return a valid binary JPEG (never SVG text)
-    return Response(make_fallback_jpeg_bytes(prompt), mimetype="image/jpeg")
+    return make_fallback_jpeg_bytes(prompt)
+
+
+# ─── Generate AI Images (Pollinations fallback) ───────────────────────────────
+@app.route("/api/generate_image")
+def generate_image():
+    prompt = request.args.get("prompt", "abstract art")
+    seed   = request.args.get("seed", "42")
+    data   = get_image_bytes(prompt, seed)
+    mtype  = "image/png" if b"PNG" in data[:10] else "image/jpeg"
+    return Response(data, mimetype=mtype)
+
 
 
 # ─── File Upload (FIX 5: auth required + extension + size check) ──────────────
@@ -1148,33 +1149,33 @@ def compile_video_endpoint():
     os.makedirs(work_dir, exist_ok=True)
 
     try:
-        # 1. Download images and validate format for FFmpeg
+        # 1. Download/Generate images and validate format for FFmpeg
         base_url   = os.getenv("BASE_URL", f"http://127.0.0.1:{os.getenv('PORT', '5000')}")
         img_paths  = []
         for i, url in enumerate(image_urls[:6]):
             dest = os.path.join(work_dir, f"img_{i:02d}.jpg")
-            fetch_url = (base_url + url) if url.startswith("/") else url
+            content = b""
             try:
-                r = requests.get(fetch_url, timeout=20)
-                # Ensure downloaded content is a valid binary image (not SVG text or HTML error)
-                content = r.content if r.status_code == 200 else b""
-                if content.startswith(b"<svg") or b"<html" in content[:100] or len(content) < 100:
-                    # Generate a valid fallback JPEG image
-                    try:
-                        from PIL import Image, ImageDraw
-                        im = Image.new("RGB", (720, 1280), color=(15, 15, 30))
-                        d = ImageDraw.Draw(im)
-                        d.rectangle([0, 500 + (i*50), 720, 580 + (i*50)], fill=(139, 92, 246))
-                        im.save(dest, format="JPEG", quality=90)
-                        img_paths.append(dest)
-                    except Exception:
-                        pass
+                if url.startswith("/api/generate_image"):
+                    parsed = urllib.parse.urlparse(url)
+                    qs = urllib.parse.parse_qs(parsed.query)
+                    p_val = qs.get("prompt", ["scene"])[0]
+                    s_val = qs.get("seed", [str(i + 42)])[0]
+                    content = get_image_bytes(p_val, s_val)
                 else:
-                    with open(dest, "wb") as fh:
-                        fh.write(content)
-                    img_paths.append(dest)
+                    fetch_url = (base_url + url) if url.startswith("/") else url
+                    r = requests.get(fetch_url, timeout=20)
+                    content = r.content if r.status_code == 200 else b""
             except Exception as e:
-                print(f"[Compile] Image download failed ({url}): {e}")
+                print(f"[Compile] Image fetch failed ({url}): {e}")
+
+            if content.startswith(b"<svg") or b"<html" in content[:100] or len(content) < 100:
+                content = make_fallback_jpeg_bytes(f"Scene {i+1}")
+
+            with open(dest, "wb") as fh:
+                fh.write(content)
+            img_paths.append(dest)
+
 
         if not img_paths:
             return jsonify({"error": "Could not download any images"}), 500
