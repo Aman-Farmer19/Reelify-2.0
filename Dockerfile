@@ -14,6 +14,6 @@ COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/ ./backend/
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
-WORKDIR /app/backend
-CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4
+WORKDIR /app
+CMD ["sh", "-c", "cd /app/backend && gunicorn app:app --bind 0.0.0.0:$PORT"]
 
