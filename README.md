@@ -413,10 +413,10 @@ This project is open source and available under the [MIT License](LICENSE).
   <img src="assets/footer_banner.jpg" alt="Built by Aman Tiwari Engineer" width="100%" />
 </p>
 
-<h3 align="center">Built with ❤️ by Aman Tiwari Engineer</h3>
+<h3 align="center">Built with ❤️ by Aman Tiwari Software Engineer</h3>
 
 <p align="center">
-  <strong>B.Tech CSE — Kashi Institute of Technology</strong>
+  <strong>Son Of Farmer</strong>
 </p>
 
 <p align="center">
